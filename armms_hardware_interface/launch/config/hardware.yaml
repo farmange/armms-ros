@@ -1,0 +1,5 @@
+at1x:
+  hardware_interface:
+     loop_hz: 100 # hz
+     joints:
+       - joint1

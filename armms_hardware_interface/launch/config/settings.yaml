@@ -1,0 +1,5 @@
+#
+#  ### Params of the orthopus addon ###
+#
+sampling_frequency          : 100     # Hz
+direction                   : 1      # Invert motor controll direction

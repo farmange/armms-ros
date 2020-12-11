@@ -1,0 +1,25 @@
+<launch>
+    <rosparam file="$(find armms_hardware_interface)/launch/config/hardware.yaml" command="load"/>
+    <rosparam file="$(find armms_hardware_interface)/launch/config/controllers.yaml" command="load"/>
+    <rosparam file="$(find armms_hardware_interface)/launch/config/joint_limits.yaml" command="load"/>
+    <node name="armms_hardware_interface" pkg="armms_hardware_interface" type="armms_hardware_interface_node" output="screen"/>
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/"
+        args="
+            /at1x/controller/state
+            /at1x/controller/position/joint1
+        "/>
+
+    <arg name="freejoy_dev" default="js0" />
+
+    <param name="joy_node/deadzone" value="0.2" type="double"/>
+    <param name="joy_node/coalesce_interval" value="0.01" type="double"/>
+    <param name="joy_node/autorepeat_rate" value="100" type="double"/>
+    <param name="joy_node/dev" value="/dev/input/$(arg freejoy_dev)" type="string"/>
+    <node name="joy_node" pkg="joy" type="joy_node" output="screen" respawn="false" />
+
+    <node name="device_freejoy" pkg="armms_hardware_interface" type="device_freejoy" output="screen" respawn="false"/>
+
+    <node name="hl_controller_node" pkg="armms_hardware_interface" type="hl_controller" output="screen">
+        <rosparam file="$(find armms_hardware_interface)/launch/config/settings.yaml"/>
+    </node>
+</launch>

@@ -1,0 +1,45 @@
+<launch>
+
+  <!-- <arg name="use_urdf" default="true"/> -->
+  <arg name="armms_robotType" default="at1x" />
+  <arg name="armms_robotName" default="$(arg armms_robotType)"/>
+	<!-- <arg name="kinova_robotSerial" default="not_set" />
+	<arg name="use_jaco_v1_fingers" default="false" /> -->
+	<arg name="feedback_publish_rate" default="0.1" />
+
+  <!-- If the node handles multiple robots uncomment this and configure /config/multiple_robots.yaml" -->
+	<!-- <rosparam file="$(find armms_bringup)/launch/config/multiple_robots.yaml" command="load" /> -->
+
+  <!-- <node name="$(arg armms_robotName)_driver" pkg="armms_hardware_interface" type="armms_driver_node" output="screen" cwd="node" args="$(arg armms_robotType)">
+    <rosparam file="$(find armms_bringup)/launch/config/robot_parameters.yaml" command="load" />
+    <param name="robot_name" value="$(arg armms_robotName)" />   
+    <param name="robot_type" value="$(arg armms_robotType)" />   
+    <param name="status_interval_seconds" value="$(arg feedback_publish_rate)" />
+  </node> -->
+    
+  <include file="$(find armms_hardware_interface)/launch/at1x_controller.launch" />
+
+  <!-- <node name="$(arg armms_robotName)_controller" pkg="armms_controller" type="armms_controller_node" output="screen" cwd="node" args="$(arg armms_robotType)">
+    <rosparam file="$(find armms_bringup)/launch/config/robot_parameters.yaml" command="load" />
+    <param name="robot_name" value="$(arg armms_robotName)" />   
+    <param name="robot_type" value="$(arg armms_robotType)" />   
+    <param name="status_interval_seconds" value="$(arg feedback_publish_rate)" />
+  </node> -->
+
+  <!-- <group unless="$(arg use_urdf)">
+    <node name="$(arg kinova_robotName)_tf_updater" pkg="kinova_driver" type="kinova_tf_updater" output="screen" cwd="node" args="$(arg kinova_robotType)">
+      <remap from="/$(arg kinova_robotName)_tf_updater/in/joint_angles" to="/$(arg kinova_robotName)_driver/out/joint_angles"/>
+      <param name="base_frame" value="root"/>
+    </node>
+  </group> -->
+
+  <!-- <group if="$(arg use_urdf)">
+    <param name="robot_description" command="$(find xacro)/xacro.py '$(find kinova_description)/urdf/$(arg kinova_robotType)_standalone.xacro'" />
+    <node name="$(arg kinova_robotName)_state_publisher"
+           pkg="robot_state_publisher"
+          type="robot_state_publisher">
+      <remap from="joint_states" to="/$(arg kinova_robotName)_driver/out/joint_state"/>
+    </node>
+  </group> -->
+
+</launch>

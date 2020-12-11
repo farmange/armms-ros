@@ -1,0 +1,11 @@
+at1x:
+  controller:
+    state:
+      type: joint_state_controller/JointStateController
+      publish_rate: 100
+    position:
+      joint1:
+        type: position_controllers/JointPositionController
+        joint: joint1
+        pid: {p: 10.0, i: 0.0, d: 1.0}
+
