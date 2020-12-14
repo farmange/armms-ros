@@ -14,8 +14,8 @@
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h>  // write(), read(), close()
 
-#define MAX_READ_RETRY 5
-#define MAX_WRITE_RETRY 5
+#define MAX_READ_RETRY 10
+#define MAX_WRITE_RETRY 10
 namespace KinovaApi
 {
     class CommLayer

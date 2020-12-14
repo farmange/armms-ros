@@ -124,7 +124,6 @@ void ArmmsHardwareInterface::write(ros::Duration elapsed_time)
     {
       ROS_WARN_STREAM("Problem writing the position command of " << joint_names_[i] << " : "
                                                                  << joint_position_command_[i] << "!");
-      ROS_WARN_STREAM("Problem writing the position command of " << joint_names_[i] << " !");
     }
   }
 }
