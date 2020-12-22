@@ -66,9 +66,10 @@ int main(int argc, char** argv)
     //   api.closeAPI();
     //   ros::Duration(1.0).sleep();
     // }
-    armms::ArmmsAPI api;
-    api.init();
-    ros::spin();
+
+    // armms::ArmmsAPI api;
+    // api.init();
+    // ros::spin();
 
     is_first_init = false;
   }

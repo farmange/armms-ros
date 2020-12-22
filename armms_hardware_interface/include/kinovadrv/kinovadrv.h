@@ -13,6 +13,7 @@
 #include <errno.h>   // Error integer and strerror() function
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h>  // write(), read(), close()
+#include <mutex>
 
 #define MAX_READ_RETRY 10
 #define MAX_WRITE_RETRY 10
@@ -60,6 +61,7 @@ namespace KinovaApi
     private:
         std::string device_;
         unsigned int baudrate_;
+        bool init_flag_;
         struct termios tty_settings_;
         int serial_port_;
     };
@@ -105,7 +107,7 @@ namespace KinovaApi
     public:
         APILayer();
         virtual ~APILayer(){};
-        ApiStatus_t init();
+        ApiStatus_t init(const std::string device, const bool &debug_log = false);
         ApiStatus_t deviceInitialisation(const uint16_t &jointAddress, float &jointPosition);
         ApiStatus_t getActualPosition(const uint16_t &jointAddress, float &jointCurrent, float &jointPositionHall, float &jointSpeed, float &jointTorque);
         ApiStatus_t setCommandAllValue(const uint16_t &jointAddress, const float &jointCommand, float &jointCurrent, float &jointPositionHall,
@@ -118,6 +120,7 @@ namespace KinovaApi
         CommLayer comm_;
         const int getExpectedReply_(uint16_t command);
         ApiStatus_t readWrite_(CommLayer::message_t *writeMessage, CommLayer::message_t *readMessage, const int &expectedResponseMsg);
+        std::mutex api_mutex_;
     };
 
 } // namespace KinovaApi

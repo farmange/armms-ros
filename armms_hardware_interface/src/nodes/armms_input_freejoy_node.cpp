@@ -56,20 +56,21 @@ DeviceFreejoy::DeviceFreejoy()
 
 void DeviceFreejoy::initializeServices_()
 {
-  ros::service::waitForService("/orthopus_addon/set_lower_limit");
-  ros::service::waitForService("/orthopus_addon/set_upper_limit");
-  ros::service::waitForService("/orthopus_addon/reset_lower_limit");
-  ros::service::waitForService("/orthopus_addon/reset_upper_limit");
+  ros::service::waitForService("/set_lower_limit");
+  ros::service::waitForService("/set_upper_limit");
+  ros::service::waitForService("/reset_lower_limit");
+  ros::service::waitForService("/reset_upper_limit");
 
-  set_upper_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/orthopus_addon/set_upper_limit");
-  set_lower_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/orthopus_addon/set_lower_limit");
-  reset_upper_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/orthopus_addon/reset_upper_limit");
-  reset_lower_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/orthopus_addon/reset_lower_limit");
+  set_upper_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/set_upper_limit");
+  set_lower_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/set_lower_limit");
+  reset_upper_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/reset_upper_limit");
+  reset_lower_limit_srv_ = n_.serviceClient<std_srvs::Empty>("/reset_lower_limit");
 }
 
 void DeviceFreejoy::retrieveParameters_()
 {
-  ros::param::get("/j2n6s300_driver/jointSpeedLimitParameter1", joint_max_speed_);
+  // ros::param::get("/j2n6s300_driver/jointSpeedLimitParameter1", joint_max_speed_);
+  ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
 }
 
 void DeviceFreejoy::callbackJoy(const sensor_msgs::Joy::ConstPtr& msg)

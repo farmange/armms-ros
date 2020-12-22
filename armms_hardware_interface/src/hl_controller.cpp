@@ -45,13 +45,17 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
     ros::shutdown();
   }
   ros::Rate loop_rate = ros::Rate(sampling_freq_);
-  ROS_INFO("Sampling frequency : %d", sampling_freq_);
+  ROS_INFO_NAMED("HLController", "Sampling frequency : %d Hz", sampling_freq_);
 
   /* Define a speed divisor, for slow down phases. The value 15.0 could be interpreted as the position in degree where
    * slow down happened. Here, we will start to decrease the speed as soon as we will be under 15 degree from the
    * defined limit.
    */
   const float reduced_speed_divisor = joint_max_speed_ / 15.0;
+
+  ROS_INFO_NAMED("HLController", "Waiting for /joint_states messages...");
+  ros::topic::waitForMessage<sensor_msgs::JointState>("/joint_states");
+  ROS_INFO_NAMED("HLController", "/joint_states messages received");
 
   while (ros::ok())
   {
@@ -70,15 +74,29 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
     {
       cmd = gui_cmd_;
     }
-    else
+    else if (joy_cmd_.data != 0.0)
     {
       cmd = joy_cmd_;
     }
+    else
+    {
+      cmd = tb_cmd_;
+    }
 
-    // handleLimits_(cmd, reduced_speed_divisor);
+    handleLimits_(cmd, reduced_speed_divisor);
     cmd.data *= direction_;
+    double prev_pos = 0;
+    // if (update_position_)
+    // {
+    //   prev_pos = joint_angles_.data;
+    // }
+    // else
+    // {
+    //   prev_pos = prev_pos_;
+    // }
+    prev_pos = joint_angles_.data;
 
-    cmd.data = joint_angles_.data + (cmd.data * 10 * sampling_period_);
+    cmd.data = prev_pos + (cmd.data * 10 * sampling_period_);
     cmd_pub_.publish(cmd);
     loop_rate.sleep();
   }
@@ -91,6 +109,7 @@ void HLController::initializeSubscribers_()
   joint_angles_sub_ = n_.subscribe("/joint_states", 1, &HLController::callbackJointStates_, this);
   joy_cmd_sub_ = n_.subscribe("/joy_cmd", 1, &HLController::callbackJoyCmd_, this);
   gui_cmd_sub_ = n_.subscribe("/gui_cmd", 1, &HLController::callbackGuiCmd_, this);
+  tb_cmd_sub_ = n_.subscribe("/tb_cmd", 1, &HLController::callbackTbCmd_, this);
 }
 
 void HLController::initializePublishers_()
@@ -121,6 +140,9 @@ void HLController::retrieveParameters_()
   ros::param::get("~sampling_frequency", sampling_freq_);
   ros::param::get("~direction", direction_);
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
+  ros::param::get("/joint_limits/joint1/min_position", lower_limit_.data);
+  ros::param::get("/joint_limits/joint1/max_position", upper_limit_.data);
+  ros::param::get("/hl_controller_node/update_position", update_position_);
 }
 
 void HLController::init_()
@@ -228,6 +250,11 @@ void HLController::callbackJoyCmd_(const std_msgs::Float64Ptr& msg)
 void HLController::callbackGuiCmd_(const std_msgs::Float64Ptr& msg)
 {
   gui_cmd_.data = msg->data;
+}
+
+void HLController::callbackTbCmd_(const std_msgs::Float64Ptr& msg)
+{
+  tb_cmd_.data = msg->data;
 }
 
 // TODO improve services to handle multiple joints configuration (e.g. srv could take integer parameter)

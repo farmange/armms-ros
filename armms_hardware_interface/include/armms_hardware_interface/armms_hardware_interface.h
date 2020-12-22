@@ -32,6 +32,7 @@ public:
   ArmmsHardwareInterface(ros::NodeHandle& nh);
   ~ArmmsHardwareInterface();
   void init();
+  void initPosition();
   void update(const ros::TimerEvent& e);
   void read();
   void write(ros::Duration elapsed_time);

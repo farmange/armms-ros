@@ -15,7 +15,7 @@ using joint_limits_interface::SoftJointLimits;
 
 namespace armms_hardware_interface
 {
-ArmmsHardwareInterface::ArmmsHardwareInterface(ros::NodeHandle& nh) : nh_(nh)
+ArmmsHardwareInterface::ArmmsHardwareInterface(ros::NodeHandle& nh) : nh_(nh), api_(nh)
 {
   init();
   controller_manager_.reset(new controller_manager::ControllerManager(this, nh_));
@@ -32,8 +32,13 @@ void ArmmsHardwareInterface::init()
 {
   // Get joint names
   nh_.getParam("/at1x/hardware_interface/joints", joint_names_);
+  bool api_logging = false;
+  std::string device = "";
+  // TODO put this properties in hardware interface config file
+  nh_.getParam("/at1x/api_logging", api_logging);
+  nh_.getParam("/at1x/device", device);
   num_joints_ = joint_names_.size();
-  ROS_DEBUG_STREAM("Initialize ArmmsHardwareInterface with " << num_joints_ << " joints");
+  ROS_INFO_STREAM_NAMED("ArmmsHardwareInterface", "Initialize controllers with " << num_joints_ << " joint(s)");
 
   // Resize vectors
   joint_position_.resize(num_joints_);
@@ -48,7 +53,7 @@ void ArmmsHardwareInterface::init()
   {
     // ROBOTcpp::Joint joint = ROBOT.getJoint(joint_names_[i]);
     std::string jointname = joint_names_[i];
-    ROS_DEBUG_STREAM("Initialize joint : " << jointname);
+    ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Initialize joint : " << jointname);
 
     // Create joint state interface
     JointStateHandle jointStateHandle(jointname, &joint_position_[i], &joint_velocity_[i], &joint_effort_[i]);
@@ -73,13 +78,18 @@ void ArmmsHardwareInterface::init()
   registerInterface(&effort_joint_interface_);
   registerInterface(&positionJointSoftLimitsInterface);
 
-  ROS_DEBUG_STREAM("Initialize ArmmsAPI...");
-  api_.init();
-  read();
+  ROS_INFO_STREAM_NAMED("ArmmsHardwareInterface", "Initialize ArmmsAPI...");
+  if (api_.init(device, api_logging) != 0)
+  {
+    ROS_FATAL("Failed to initialize API... Exit the node process !");
+    exit(0);
+  }
+  initPosition();
   for (int i = 0; i < num_joints_; i++)
   {
     joint_position_command_[i] = joint_position_[i];
   }
+  ROS_INFO_STREAM_NAMED("ArmmsHardwareInterface", "Initialization done");
 }
 
 void ArmmsHardwareInterface::update(const ros::TimerEvent& e)
@@ -90,13 +100,29 @@ void ArmmsHardwareInterface::update(const ros::TimerEvent& e)
   write(elapsed_time_);
 }
 
+void ArmmsHardwareInterface::initPosition()
+{
+  for (int i = 0; i < num_joints_; i++)
+  {
+    // joint_position_[i] = joint_position_[i] + 1;
+    float pos = 0;
+    ROS_DEBUG_STREAM("Initialise " << joint_names_[i] << "... ");
+
+    while (api_.initializeActuator(pos) != 0)
+    {
+      ROS_WARN_STREAM("Fail to initialise " << joint_names_[i] << "! Try again !");
+    }
+    joint_position_[i] = pos;
+  }
+}
+
 void ArmmsHardwareInterface::read()
 {
   for (int i = 0; i < num_joints_; i++)
   {
     // joint_position_[i] = joint_position_[i] + 1;
     float pos = 0;
-    if (api_.setPositionCommand(joint_position_command_[i], pos) == 0)
+    if (api_.initializeActuator(pos) == 0)
     {
       ROS_DEBUG_STREAM("Read position: " << pos);
       joint_position_[i] = pos;
@@ -114,11 +140,14 @@ void ArmmsHardwareInterface::write(ros::Duration elapsed_time)
   for (int i = 0; i < num_joints_; i++)
   {
     // ROBOT.getJoint(joint_names_[i]).actuate(joint_effort_command_[i]);
-    float pos = 0;
+    float pos = 0, torque = 0;
 
-    if (api_.setPositionCommand(joint_position_command_[i], pos) == 0)
+    if (api_.setPositionCommand(joint_position_command_[i], pos, torque) == 0)
     {
       ROS_DEBUG_STREAM("Write position command: " << joint_position_command_[i]);
+      ROS_DEBUG("Read position : %f | torque : %f", pos, torque);
+      // joint_position_[i] = pos;
+      joint_effort_[i] = torque;
     }
     else
     {
