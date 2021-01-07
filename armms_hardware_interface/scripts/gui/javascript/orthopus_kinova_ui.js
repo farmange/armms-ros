@@ -2,6 +2,7 @@ var ros;
 var upper_limit_sub;
 var lower_limit_sub;
 var gui_cmd_pub;
+var spd_setpoint_pub;
 
 var set_zero_torque_srv;
 var set_lower_limit_srv;
@@ -18,7 +19,7 @@ var speed_cmd = 0.0;
 
 var mainTimer;
 
-var MAX_SPEED = 36.0;
+var MAX_SPEED = 30.0;
 
 var enable_loop = true;
 function stopLoop() {
@@ -40,7 +41,13 @@ function publishSpeed() {
     data: parseFloat(speed_cmd),
   });
   gui_cmd_pub.publish(msg);
+
+  var msg_setpoint = new ROSLIB.Message({
+    data: parseFloat(speed_setpoint),
+  });
+  spd_setpoint_pub.publish(msg_setpoint);
 }
+
 
 function mainLoop() {
   if (enable_loop) {
@@ -173,6 +180,13 @@ window.onload = function () {
   gui_cmd_pub = new ROSLIB.Topic({
     ros: ros,
     name: '/gui_cmd',
+    messageType: 'std_msgs/Float64'
+  });
+
+  // ----------------------
+  spd_setpoint_pub = new ROSLIB.Topic({
+    ros: ros,
+    name: '/speed_setpoint',
     messageType: 'std_msgs/Float64'
   });
 

@@ -3,8 +3,8 @@
 #
 sampling_frequency          : 100     # Hz
 direction                   : 1      # Invert motor controll direction
-twin_button_up_pin          : 28
-twin_button_down_pin        : 29
+twin_button_up_pin          : 24
+twin_button_down_pin        : 25
 twin_button_velocity        : 8.0
 actuator_address            : 19
-update_position             : true
+close_loop_control          : false

@@ -111,6 +111,7 @@ void ArmmsHardwareInterface::initPosition()
     while (api_.initializeActuator(pos) != 0)
     {
       ROS_WARN_STREAM("Fail to initialise " << joint_names_[i] << "! Try again !");
+      // exit(0);
     }
     joint_position_[i] = pos;
   }
@@ -146,7 +147,7 @@ void ArmmsHardwareInterface::write(ros::Duration elapsed_time)
     {
       ROS_DEBUG_STREAM("Write position command: " << joint_position_command_[i]);
       ROS_DEBUG("Read position : %f | torque : %f", pos, torque);
-      // joint_position_[i] = pos;
+      joint_position_[i] = pos;
       joint_effort_[i] = torque;
     }
     else

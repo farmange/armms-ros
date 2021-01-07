@@ -56,48 +56,81 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
   ROS_INFO_NAMED("HLController", "Waiting for /joint_states messages...");
   ros::topic::waitForMessage<sensor_msgs::JointState>("/joint_states");
   ROS_INFO_NAMED("HLController", "/joint_states messages received");
+  /* SpinOnce to retrieve joint state */
+  ros::spinOnce();
+
+  /* Initialize position command with initial joint position */
+  cmd_.data = joint_angles_.data;
 
   while (ros::ok())
   {
+    // speed_setpoint_ = NAN;
+
     ros::spinOnce();
-    // ROS_DEBUG_STREAM_NAMED("HLController", "Joint angles :\n" << joint_angles_);
 
-    upper_limit_pub_.publish(upper_limit_);
-    lower_limit_pub_.publish(lower_limit_);
-    joint_angle_pub_.publish(joint_angles_);
-
-    std_msgs::Float64 cmd;
+    double input_velocity_cmd;
 
     /* Prioritize the input velocity command. GUI is higher priority so we take joypad command only
      * if no GUI command is received */
     if (gui_cmd_.data != 0.0)
     {
-      cmd = gui_cmd_;
+      input_velocity_cmd = gui_cmd_.data;
+      ROS_INFO_NAMED("HLController", "velocity command received from gui : %f", input_velocity_cmd);
     }
     else if (joy_cmd_.data != 0.0)
     {
-      cmd = joy_cmd_;
+      input_velocity_cmd = joy_cmd_.data;
+      ROS_INFO_NAMED("HLController", "velocity command received from joy : %f", input_velocity_cmd);
+    }
+    else if (tb_cmd_.data != 0.0)
+    {
+      input_velocity_cmd = tb_cmd_.data;
+      ROS_INFO_NAMED("HLController", "velocity command received from twin button : %f", input_velocity_cmd);
     }
     else
     {
-      cmd = tb_cmd_;
+      input_velocity_cmd = 0.0;
+      ROS_INFO_NAMED("HLController", "no velocity command received !");
     }
 
-    handleLimits_(cmd, reduced_speed_divisor);
-    cmd.data *= direction_;
-    double prev_pos = 0;
-    // if (update_position_)
-    // {
-    //   prev_pos = joint_angles_.data;
-    // }
-    // else
-    // {
-    //   prev_pos = prev_pos_;
-    // }
-    prev_pos = joint_angles_.data;
+    /* Take velocity set from gui if available */
+    if (speed_setpoint_ != speed_setpoint_)
+    {
+      /* setpoint is NaN : do not use it */
+    }
+    else if (input_velocity_cmd != 0.0)
+    {
+      ROS_WARN_NAMED("HLController", "Velocity setpoint receive from gui : %f", speed_setpoint_);
+      if (input_velocity_cmd < 0.0)
+      {
+        input_velocity_cmd = -speed_setpoint_;
+      }
+      else
+      {
+        input_velocity_cmd = speed_setpoint_;
+      }
+    }
 
-    cmd.data = prev_pos + (cmd.data * 10 * sampling_period_);
-    cmd_pub_.publish(cmd);
+    adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor);
+    input_velocity_cmd *= direction_;
+
+    ROS_INFO_NAMED("HLController", "input_velocity_cmd : %f", input_velocity_cmd);
+
+    if (close_loop_control_)
+    {
+      cmd_.data = joint_angles_.data;
+    }
+
+    cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
+    handleLimits_(cmd_.data);
+
+    ROS_INFO_NAMED("HLController", "output position command : %f", cmd_.data);
+
+    // cmd
+    cmd_pub_.publish(cmd_);
+    upper_limit_pub_.publish(upper_limit_);
+    lower_limit_pub_.publish(lower_limit_);
+    joint_angle_pub_.publish(joint_angles_);
     loop_rate.sleep();
   }
 }
@@ -105,11 +138,11 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
 void HLController::initializeSubscribers_()
 {
   ROS_DEBUG_NAMED("HLController", "initializeSubscribers");
-  // TODO get robotname from config file instead of fixed string "j2n6s300"
   joint_angles_sub_ = n_.subscribe("/joint_states", 1, &HLController::callbackJointStates_, this);
   joy_cmd_sub_ = n_.subscribe("/joy_cmd", 1, &HLController::callbackJoyCmd_, this);
   gui_cmd_sub_ = n_.subscribe("/gui_cmd", 1, &HLController::callbackGuiCmd_, this);
   tb_cmd_sub_ = n_.subscribe("/tb_cmd", 1, &HLController::callbackTbCmd_, this);
+  spd_setpoint_sub_ = n_.subscribe("/speed_setpoint", 1, &HLController::callbackSpeedSetpoint_, this);
 }
 
 void HLController::initializePublishers_()
@@ -142,16 +175,29 @@ void HLController::retrieveParameters_()
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
   ros::param::get("/joint_limits/joint1/min_position", lower_limit_.data);
   ros::param::get("/joint_limits/joint1/max_position", upper_limit_.data);
-  ros::param::get("/hl_controller_node/update_position", update_position_);
+  ros::param::get("/hl_controller_node/close_loop_control", close_loop_control_);
 }
 
 void HLController::init_()
 {
   upper_limit_.data = NAN;
   lower_limit_.data = NAN;
+  speed_setpoint_ = NAN;
 }
 
-void HLController::handleLimits_(std_msgs::Float64& cmd, const float divisor)
+void HLController::handleLimits_(double& cmd)
+{
+  if (cmd > upper_limit_.data)
+  {
+    cmd = upper_limit_.data;
+  }
+  if (cmd < lower_limit_.data)
+  {
+    cmd = lower_limit_.data;
+  }
+}
+
+void HLController::adaptVelocityNearLimits_(double& cmd, const float divisor)
 {
   if (upper_limit_.data != NAN && enable_upper_limit)
   {
@@ -159,17 +205,17 @@ void HLController::handleLimits_(std_msgs::Float64& cmd, const float divisor)
     if (joint_angles_.data > upper_limit_.data)
     {
       /* If we have exceed the upper limit, we can only go in reverse direction */
-      if (cmd.data > 0.0)
+      if (cmd > 0.0)
       {
         ROS_DEBUG_STREAM_NAMED("HLController", "Upper limit overshooted. Cannot move in this direction !");
-        cmd.data = 0.0;
+        cmd = 0.0;
       }
     }
-    else if ((cmd.data > 0.0) && (upper_limit_.data - joint_angles_.data < (abs(cmd.data) / divisor)))
+    else if ((cmd > 0.0) && (upper_limit_.data - joint_angles_.data < (abs(cmd) / divisor)))
     {
       ROS_DEBUG_STREAM_NAMED("HLController", "Close to upper limit, automatic slow down ! ");
       /* In this code section, we exponentially decrease the speed as we get closer to the defined limit */
-      cmd.data *= ((upper_limit_.data - joint_angles_.data) / (2.0 * abs(cmd.data) / divisor));
+      cmd *= ((upper_limit_.data - joint_angles_.data) / (2.0 * abs(cmd) / divisor));
     }
   }
 
@@ -179,17 +225,17 @@ void HLController::handleLimits_(std_msgs::Float64& cmd, const float divisor)
     if (joint_angles_.data < lower_limit_.data)
     {
       /* If we have exceed the lower limit, we can only go in direct direction */
-      if (cmd.data < 0.0)
+      if (cmd < 0.0)
       {
         ROS_DEBUG_STREAM_NAMED("HLController", "Lower limit overshooted. Cannot move in this direction !");
-        cmd.data = 0.0;
+        cmd = 0.0;
       }
     }
-    else if ((cmd.data < 0.0) && (joint_angles_.data - lower_limit_.data < (abs(cmd.data) / divisor)))
+    else if ((cmd < 0.0) && (joint_angles_.data - lower_limit_.data < (abs(cmd) / divisor)))
     {
       ROS_DEBUG_STREAM_NAMED("HLController", "Close to lower limit, automatic slow down ! ");
       /* In this code section, we exponentially decrease the speed as we get closer to the defined limit */
-      cmd.data *= ((joint_angles_.data - lower_limit_.data) / (2.0 * abs(cmd.data) / divisor));
+      cmd *= ((joint_angles_.data - lower_limit_.data) / (2.0 * abs(cmd) / divisor));
     }
   }
 }
@@ -240,6 +286,7 @@ void HLController::callbackJointStates_(const sensor_msgs::JointStatePtr& msg)
 {
   ROS_DEBUG("callbackJointStates_");
   joint_angles_.data = direction_ * msg->position[0];
+  ROS_DEBUG("joint_angles_.data : %f", joint_angles_.data);
 }
 
 void HLController::callbackJoyCmd_(const std_msgs::Float64Ptr& msg)
@@ -255,6 +302,11 @@ void HLController::callbackGuiCmd_(const std_msgs::Float64Ptr& msg)
 void HLController::callbackTbCmd_(const std_msgs::Float64Ptr& msg)
 {
   tb_cmd_.data = msg->data;
+}
+
+void HLController::callbackSpeedSetpoint_(const std_msgs::Float64Ptr& msg)
+{
+  speed_setpoint_ = msg->data;
 }
 
 // TODO improve services to handle multiple joints configuration (e.g. srv could take integer parameter)

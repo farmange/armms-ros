@@ -41,6 +41,8 @@ private:
   ros::Subscriber joy_cmd_sub_;
   ros::Subscriber gui_cmd_sub_;
   ros::Subscriber tb_cmd_sub_;
+  ros::Subscriber spd_setpoint_sub_;
+
   ros::Publisher cmd_pub_;
   ros::Publisher upper_limit_pub_;
   ros::Publisher lower_limit_pub_;
@@ -58,8 +60,9 @@ private:
   double sampling_period_;
   bool enable_upper_limit;
   bool enable_lower_limit;
-  bool update_position_;
+  bool close_loop_control_;
   double prev_pos_;
+  double speed_setpoint_;
 
   std_msgs::Float64 joint_angles_;
   std_msgs::Float64 upper_limit_;
@@ -67,6 +70,7 @@ private:
   std_msgs::Float64 joy_cmd_;
   std_msgs::Float64 tb_cmd_;
   std_msgs::Float64 gui_cmd_;
+  std_msgs::Float64 cmd_;
 
   void initializeSubscribers_();
   void initializePublishers_();
@@ -74,7 +78,8 @@ private:
   void retrieveParameters_();
   void init_();
 
-  void handleLimits_(std_msgs::Float64& cmd, const float divisor);
+  void handleLimits_(double& cmd);
+  void adaptVelocityNearLimits_(double& cmd, const float divisor);
 
   void updateJointStates_(std_msgs::Float64& joint_angles, int joint_number, float joint_value);
   void setUpperLimit_(const int joint_number, const float upper_limit_value);
@@ -84,6 +89,7 @@ private:
   void callbackJoyCmd_(const std_msgs::Float64Ptr& msg);
   void callbackGuiCmd_(const std_msgs::Float64Ptr& msg);
   void callbackTbCmd_(const std_msgs::Float64Ptr& msg);
+  void callbackSpeedSetpoint_(const std_msgs::Float64Ptr& msg);
   bool callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   bool callbackSetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   bool callbackResetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);

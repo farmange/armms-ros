@@ -32,9 +32,11 @@ DeviceTwinButton::DeviceTwinButton()
 
   debounce_button_up_ = ros::Time::now();
   debounce_button_down_ = ros::Time::now();
+  // debounce_button_power_ = ros::Time::now();
 
   button_up_ = 0;
   button_down_ = 0;
+  // button_power_ = 0;
 
   velocity_factor_ = joint_max_speed_;
 
@@ -45,7 +47,7 @@ DeviceTwinButton::DeviceTwinButton()
     ROS_ERROR("wiringPiSetup error !");
     exit(0);
   }
-  pinMode(1, OUTPUT);
+  // pinMode(1, OUTPUT);
   pinMode(up_pin_, INPUT);
   pinMode(down_pin_, INPUT);
   pullUpDnControl(up_pin_, PUD_UP);
@@ -60,7 +62,7 @@ DeviceTwinButton::DeviceTwinButton()
   {
     ros::spinOnce();
 
-    digitalWrite(1, state);
+    // digitalWrite(1, state);
 
     processButtons_();
     std_msgs::Float64 joint_vel;

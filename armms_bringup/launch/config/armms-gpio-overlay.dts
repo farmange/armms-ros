@@ -1,0 +1,21 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+   videocore {
+      pins_4b { // Pi4 Model B
+         pin_config {
+            pin@default {
+               polarity = "active_high";
+               termination = "pull_down";
+               startup_state = "inactive";
+               function = "input";
+            }; // pin
+            pin@p17 { function = "output";  termination = "no_pulling"; drive_strength_mA = < 16 >; startup_state = "active"; };   // RED LED
+            pin@p22 { function = "output";  termination = "no_pulling"; drive_strength_mA = < 16 >; startup_state = "inactive"; }; // BLUE LED
+            pin@p27 { function = "output";  termination = "no_pulling"; drive_strength_mA = < 16 >; startup_state = "inactive"; }; // GREEN LED
+         }; // pin_config
+      }; // pins
+   };
+};
+

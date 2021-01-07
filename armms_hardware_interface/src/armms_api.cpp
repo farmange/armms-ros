@@ -88,7 +88,9 @@ int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointPosition
 
 int ArmmsAPI::initializeActuator(float& jointPositionOptical)
 {
-  APILayer::ApiStatus_t status = driver_->deviceInitialisation(jointAddress_, jointPositionOptical);
+  APILayer::ApiStatus_t status;
+  status = driver_->deviceInitialisation(jointAddress_, jointPositionOptical);
+
   if (status == APILayer::API_OK)
   {
     return 0;

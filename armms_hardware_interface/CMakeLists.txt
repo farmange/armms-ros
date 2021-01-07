@@ -62,6 +62,7 @@ add_library(armms_libkinova
   include/kinovadrv/kinovadrv.h
 )
 
+# ARMMS driver node
 add_executable(armms_driver_node
   src/nodes/armms_driver_node.cpp
 )
@@ -71,6 +72,7 @@ target_link_libraries(armms_libkinova ${catkin_LIBRARIES} dl)
 target_link_libraries(armms_driver_node ${catkin_LIBRARIES} dl)
 target_link_libraries(armms_driver_node ${catkin_LIBRARIES} armms_libkinova kinovadrv)
 
+# ARMMS driver node
 add_executable(armms_hardware_interface_node
 src/nodes/armms_hardware_interface_node.cpp
 src/armms_hardware_interface.cpp
