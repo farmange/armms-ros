@@ -28,6 +28,12 @@
 #include "std_msgs/Float64.h"
 #include "sensor_msgs/JointState.h"
 
+#include "orthopus_space_control/robot_manager_fsm.h"
+#include "orthopus_space_control/fsm/engine.h"
+#include "orthopus_space_control/fsm/state.h"
+#include "orthopus_space_control/fsm/transition.h"
+
+// TODO change namespace
 namespace orthopus_addon
 {
 class HLController
@@ -36,6 +42,7 @@ public:
   HLController();
 
 private:
+
   ros::NodeHandle n_;
   ros::Subscriber joint_angles_sub_;
   ros::Subscriber joy_cmd_sub_;
@@ -53,6 +60,46 @@ private:
   ros::ServiceServer reset_lower_limit_service_;
   ros::ServiceServer enable_upper_limit_service_;
   ros::ServiceServer enable_lower_limit_service_;
+
+  /* FSM engine */
+  Engine<HLController>* engine_;
+
+  /* FSM state */
+  State<HLController>* state_uninitialize_;
+  State<HLController>* state_running_;
+  State<HLController>* state_shutting_down_;
+  State<HLController>* state_error_processing_;
+  State<HLController>* state_finalized_;
+
+  /* FSM Transitions */
+  Transition<HLController>* tr_error_raised_;
+  Transition<HLController>* tr_to_running_;
+  Transition<HLController>* tr_to_shutting_down_;
+  Transition<HLController>* tr_error_success_;
+  Transition<HLController>* tr_error_failure_;
+
+  bool trErrorRaised_();
+  bool trToRunning_();
+  bool trToShuttingDown_();
+  bool trErrorSuccess_();
+  bool trErrorFailure_();
+
+  /* FSM functions */
+  void uninitializedEnter_();
+  void runningEnter_();
+  void runningUpdate_();
+  void shuttingDownEnter_();
+  void errorProcessingEnter_();
+  void finalizedEnter_();
+
+  /* FSM input event (what is allowed to do from user point of view) */
+  FsmInputEvent input_event_requested_;
+  typedef enum status_e
+  {
+    OK = 0,
+    ERROR
+  }status_t;
+  status_t status_;
 
   int sampling_freq_;
   int direction_;
@@ -76,6 +123,7 @@ private:
   void initializePublishers_();
   void initializeServices_();
   void retrieveParameters_();
+  void initializeStateMachine_();
   void init_();
 
   void handleLimits_(double& cmd);

@@ -22,6 +22,7 @@
 #include <ros/ros.h>
 
 #include "sensor_msgs/Joy.h"
+#include "std_msgs/ColorRGBA.h"
 
 namespace input_device
 {
@@ -33,26 +34,40 @@ public:
 private:
   ros::NodeHandle n_;
   ros::Publisher cmd_pub_;
+  ros::Subscriber led_color_sub_;
 
-  ros::Time debounce_button_up_;
-  ros::Time debounce_button_down_;
+  ros::Time debounce_up_btn_;
+  ros::Time debounce_down_btn_;
+  ros::Time debounce_button_power_;
 
-  int button_up_;
-  int button_down_;
+  int up_btn_state_;
+  int down_btn_state_;
+  int power_btn_state_;
+  int limit_switch_state_;
+
+  int red_led_state_;
+  int green_led_state_;
+  int blue_led_state_;
 
   int up_pin_;
   int down_pin_;
+  int power_pin_;
+  int limit_switch_pin_;
 
-  double velocity_factor_;
+  int red_led_pin_;
+  int green_led_pin_;
+  int blue_led_pin_;
 
   double debounce_button_time_;
-  double velocity_factor_inc_;
 
-  double joint_max_speed_;
+  double joint_max_spd_;
 
   void retrieveParameters_();
   void processButtons_();
   void debounceButtons_();
+
+  void initializeSubscribers_();
+  void callbackLedColor_(const std_msgs::ColorRGBA& msg);
 };
 }  // namespace input_device
 #endif

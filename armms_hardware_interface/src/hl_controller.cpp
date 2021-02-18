@@ -33,6 +33,7 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
   initializePublishers_();
   initializeSubscribers_();
   initializeServices_();
+  initializeStateMachine_();
 
   if (sampling_freq_ > 0)
   {
@@ -64,73 +65,16 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
 
   while (ros::ok())
   {
-    // speed_setpoint_ = NAN;
-
     ros::spinOnce();
 
-    double input_velocity_cmd;
+    /**** FSM ****/
+    ROS_DEBUG("Current state is '%s' and input event is '%s'", engine_->getCurrentState()->getName().c_str(),
+              input_event_requested_.toString().c_str());
 
-    /* Prioritize the input velocity command. GUI is higher priority so we take joypad command only
-     * if no GUI command is received */
-    if (gui_cmd_.data != 0.0)
-    {
-      input_velocity_cmd = gui_cmd_.data;
-      ROS_INFO_NAMED("HLController", "velocity command received from gui : %f", input_velocity_cmd);
-    }
-    else if (joy_cmd_.data != 0.0)
-    {
-      input_velocity_cmd = joy_cmd_.data;
-      ROS_INFO_NAMED("HLController", "velocity command received from joy : %f", input_velocity_cmd);
-    }
-    else if (tb_cmd_.data != 0.0)
-    {
-      input_velocity_cmd = tb_cmd_.data;
-      ROS_INFO_NAMED("HLController", "velocity command received from twin button : %f", input_velocity_cmd);
-    }
-    else
-    {
-      input_velocity_cmd = 0.0;
-      ROS_INFO_NAMED("HLController", "no velocity command received !");
-    }
-
-    /* Take velocity set from gui if available */
-    if (speed_setpoint_ != speed_setpoint_)
-    {
-      /* setpoint is NaN : do not use it */
-    }
-    else if (input_velocity_cmd != 0.0)
-    {
-      ROS_WARN_NAMED("HLController", "Velocity setpoint receive from gui : %f", speed_setpoint_);
-      if (input_velocity_cmd < 0.0)
-      {
-        input_velocity_cmd = -speed_setpoint_;
-      }
-      else
-      {
-        input_velocity_cmd = speed_setpoint_;
-      }
-    }
-
-    adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor);
-    input_velocity_cmd *= direction_;
-
-    ROS_INFO_NAMED("HLController", "input_velocity_cmd : %f", input_velocity_cmd);
-
-    if (close_loop_control_)
-    {
-      cmd_.data = joint_angles_.data;
-    }
-
-    cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
-    handleLimits_(cmd_.data);
-
-    ROS_INFO_NAMED("HLController", "output position command : %f", cmd_.data);
-
-    // cmd
-    cmd_pub_.publish(cmd_);
-    upper_limit_pub_.publish(upper_limit_);
-    lower_limit_pub_.publish(lower_limit_);
-    joint_angle_pub_.publish(joint_angles_);
+    engine_->process();
+    input_event_requested_ = FsmInputEvent::None;
+    /*************/
+    
     loop_rate.sleep();
   }
 }
@@ -177,6 +121,185 @@ void HLController::retrieveParameters_()
   ros::param::get("/joint_limits/joint1/max_position", upper_limit_.data);
   ros::param::get("/hl_controller_node/close_loop_control", close_loop_control_);
 }
+
+void HLController::initializeStateMachine_()
+{
+  /* State definition */
+  state_uninitialize_ = new State<HLController>(this, "UNINITIALIZED");
+  state_uninitialize_->registerEnterFcn(&HLController::uninitializedEnter_);
+
+  state_running_ = new State<HLController>(this, "RUNNING");
+  state_running_->registerEnterFcn(&HLController::runningEnter_);
+  state_running_->registerUpdateFcn(&HLController::runningUpdate_);
+
+  state_shutting_down_ = new State<HLController>(this, "SHUTTING DOWN");
+  state_shutting_down_->registerEnterFcn(&HLController::shuttingDownEnter_);
+
+  state_error_processing_ = new State<HLController>(this, "ERROR PROCESSING");
+  state_error_processing_->registerEnterFcn(&HLController::errorProcessingEnter_);
+
+  state_finalized_ = new State<HLController>(this, "FINALIZED");
+  state_finalized_->registerEnterFcn(&HLController::finalizedEnter_);
+
+  /* Transitions definition */
+  tr_error_raised_ = new Transition<HLController>(this, state_error_processing_);
+  tr_error_raised_->registerConditionFcn(&HLController::trErrorRaised_);
+  tr_error_raised_->addInitialState(state_running_);
+  tr_error_raised_->addInitialState(state_shutting_down_);
+
+  tr_to_running_ = new Transition<HLController>(this, state_running_);
+  tr_to_running_->registerConditionFcn(&HLController::trToRunning_);
+  tr_to_running_->addInitialState(state_uninitialize_);
+
+  tr_to_shutting_down_ = new Transition<HLController>(this, state_shutting_down_);
+  tr_to_shutting_down_->registerConditionFcn(&HLController::trToShuttingDown_);
+  tr_to_shutting_down_->addInitialState(state_uninitialized_);
+  tr_to_shutting_down_->addInitialState(state_running_);
+
+  tr_error_success_ = new Transition<HLController>(this, state_uninitialized_);
+  tr_error_success_->registerConditionFcn(&HLController::trErrorSuccess_);
+  tr_error_success_->addInitialState(state_error_processing_);
+
+  tr_error_failure_ = new Transition<HLController>(this, state_finalized_);
+  tr_error_failure_->registerConditionFcn(&HLController::trErrorFailure_);
+  tr_error_failure_->addInitialState(state_error_processing_);
+
+  /* Engine definition */
+  engine_ = new Engine<HLController>(this);
+  engine_->registerState(state_uninitialize_);
+  engine_->registerState(state_running_);
+  engine_->registerState(state_shutting_down_);
+  engine_->registerState(state_error_processing_);
+  engine_->registerState(state_finalized_);
+
+  engine_->registerTransition(tr_error_raised_);
+  engine_->registerTransition(tr_to_running_);
+  engine_->registerTransition(tr_to_shutting_down_);
+  engine_->registerTransition(tr_error_success_);
+  engine_->registerTransition(tr_error_failure_);
+
+  engine_->setCurrentState(state_uninitialize_);
+}
+
+/****** FSM State function definition ******/
+void HLController::uninitializedEnter_()
+{
+
+}
+
+void HLController::runningEnter_()
+{
+
+}
+
+void HLController::runningUpdate_()
+{
+  double input_velocity_cmd;
+
+  /* Prioritize the input velocity command. GUI is higher priority so we take joypad command only
+    * if no GUI command is received */
+  if (gui_cmd_.data != 0.0)
+  {
+    input_velocity_cmd = gui_cmd_.data;
+    ROS_INFO_NAMED("HLController", "velocity command received from gui : %f", input_velocity_cmd);
+  }
+  else if (joy_cmd_.data != 0.0)
+  {
+    input_velocity_cmd = joy_cmd_.data;
+    ROS_INFO_NAMED("HLController", "velocity command received from joy : %f", input_velocity_cmd);
+  }
+  else if (tb_cmd_.data != 0.0)
+  {
+    input_velocity_cmd = tb_cmd_.data;
+    ROS_INFO_NAMED("HLController", "velocity command received from twin button : %f", input_velocity_cmd);
+  }
+  else
+  {
+    input_velocity_cmd = 0.0;
+    ROS_INFO_NAMED("HLController", "no velocity command received !");
+  }
+
+  /* Take velocity set from gui if available */
+  if (speed_setpoint_ != speed_setpoint_)
+  {
+    /* setpoint is NaN : do not use it */
+  }
+  else if (input_velocity_cmd != 0.0)
+  {
+    ROS_WARN_NAMED("HLController", "Velocity setpoint receive from gui : %f", speed_setpoint_);
+    if (input_velocity_cmd < 0.0)
+    {
+      input_velocity_cmd = -speed_setpoint_;
+    }
+    else
+    {
+      input_velocity_cmd = speed_setpoint_;
+    }
+  }
+
+  adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor);
+  input_velocity_cmd *= direction_;
+
+  ROS_INFO_NAMED("HLController", "input_velocity_cmd : %f", input_velocity_cmd);
+
+  if (close_loop_control_)
+  {
+    cmd_.data = joint_angles_.data;
+  }
+
+  cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
+  handleLimits_(cmd_.data);
+
+  ROS_INFO_NAMED("HLController", "output position command : %f", cmd_.data);
+
+  // cmd
+  cmd_pub_.publish(cmd_);
+  upper_limit_pub_.publish(upper_limit_);
+  lower_limit_pub_.publish(lower_limit_);
+  joint_angle_pub_.publish(joint_angles_);
+}
+
+void HLController::shuttingDownEnter_()
+{
+
+}
+
+void HLController::errorProcessingEnter_()
+{
+  /* TODO do nothing : error is still present */
+}
+
+void HLController::finalizedEnter_()
+{
+  ros::shutdown();
+}
+
+/******** FSM Transition definition ********/
+bool HLController::trErrorRaised_()
+{
+  return (status_ == ERROR);
+}
+
+bool HLController::trToRunning_()
+{
+  return (input_event_requested_ == Start);
+}
+
+bool HLController::trToShuttingDown_()
+{
+  return (input_event_requested_ == Shutdown);
+}
+
+bool HLController::trErrorSuccess_()
+{
+  return (status_ == OK);
+}
+
+bool HLController::trErrorFailure_()
+{
+  return (status_ == ERROR);
+}
+/*******************************************/
 
 void HLController::init_()
 {
