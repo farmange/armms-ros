@@ -21,10 +21,10 @@
 
 #include "ros/ros.h"
 
-#include "orthopus_space_control/fsm/state.h"
-#include "orthopus_space_control/fsm/transition.h"
+#include "armms_hardware_interface/fsm/state.h"
+#include "armms_hardware_interface/fsm/transition.h"
 
-namespace space_control
+namespace orthopus_addon
 {
 template <class T>
 class Engine
@@ -108,5 +108,5 @@ private:
   std::vector<State<T>*> states_;
   std::vector<Transition<T>*> transitions_;
 };
-}
+}  // namespace orthopus_addon
 #endif

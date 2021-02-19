@@ -35,14 +35,17 @@ private:
   ros::NodeHandle n_;
   ros::Publisher cmd_pub_;
   ros::Subscriber led_color_sub_;
+  ros::ServiceClient start_srv_;
+  ros::ServiceClient shutdown_srv_;
 
   ros::Time debounce_up_btn_;
   ros::Time debounce_down_btn_;
-  ros::Time debounce_button_power_;
+  ros::Time debounce_power_btn_;
 
   int up_btn_state_;
   int down_btn_state_;
   int power_btn_state_;
+  int power_btn_prev_state_;
   int limit_switch_state_;
 
   int red_led_state_;
@@ -64,9 +67,11 @@ private:
 
   void retrieveParameters_();
   void processButtons_();
+  void processLeds_();
   void debounceButtons_();
-
+  void initializePublishers_();
   void initializeSubscribers_();
+  void initializeServices_();
   void callbackLedColor_(const std_msgs::ColorRGBA& msg);
 };
 }  // namespace input_device

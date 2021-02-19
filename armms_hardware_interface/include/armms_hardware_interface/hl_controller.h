@@ -28,10 +28,10 @@
 #include "std_msgs/Float64.h"
 #include "sensor_msgs/JointState.h"
 
-#include "orthopus_space_control/robot_manager_fsm.h"
-#include "orthopus_space_control/fsm/engine.h"
-#include "orthopus_space_control/fsm/state.h"
-#include "orthopus_space_control/fsm/transition.h"
+#include "armms_hardware_interface/robot_manager_fsm.h"
+#include "armms_hardware_interface/fsm/engine.h"
+#include "armms_hardware_interface/fsm/state.h"
+#include "armms_hardware_interface/fsm/transition.h"
 
 // TODO change namespace
 namespace orthopus_addon
@@ -42,7 +42,6 @@ public:
   HLController();
 
 private:
-
   ros::NodeHandle n_;
   ros::Subscriber joint_angles_sub_;
   ros::Subscriber joy_cmd_sub_;
@@ -54,12 +53,19 @@ private:
   ros::Publisher upper_limit_pub_;
   ros::Publisher lower_limit_pub_;
   ros::Publisher joint_angle_pub_;
+
+  ros::ServiceServer start_service_;
+  ros::ServiceServer stop_service_;
   ros::ServiceServer set_upper_limit_service_;
   ros::ServiceServer set_lower_limit_service_;
   ros::ServiceServer reset_upper_limit_service_;
   ros::ServiceServer reset_lower_limit_service_;
   ros::ServiceServer enable_upper_limit_service_;
   ros::ServiceServer enable_lower_limit_service_;
+
+  ros::ServiceClient switch_ctrl_srv_;
+  ros::ServiceClient start_motor_control_srv_;
+  ros::ServiceClient stop_motor_control_srv_;
 
   /* FSM engine */
   Engine<HLController>* engine_;
@@ -77,12 +83,14 @@ private:
   Transition<HLController>* tr_to_shutting_down_;
   Transition<HLController>* tr_error_success_;
   Transition<HLController>* tr_error_failure_;
+  Transition<HLController>* tr_test_;
 
   bool trErrorRaised_();
   bool trToRunning_();
   bool trToShuttingDown_();
   bool trErrorSuccess_();
   bool trErrorFailure_();
+  bool trTest_();
 
   /* FSM functions */
   void uninitializedEnter_();
@@ -98,7 +106,7 @@ private:
   {
     OK = 0,
     ERROR
-  }status_t;
+  } status_t;
   status_t status_;
 
   int sampling_freq_;
@@ -110,6 +118,7 @@ private:
   bool close_loop_control_;
   double prev_pos_;
   double speed_setpoint_;
+  float reduced_speed_divisor_;
 
   std_msgs::Float64 joint_angles_;
   std_msgs::Float64 upper_limit_;
@@ -126,6 +135,9 @@ private:
   void initializeStateMachine_();
   void init_();
 
+  status_t startMotor_();
+  status_t stopMotor_();
+
   void handleLimits_(double& cmd);
   void adaptVelocityNearLimits_(double& cmd, const float divisor);
 
@@ -137,6 +149,10 @@ private:
   void callbackJoyCmd_(const std_msgs::Float64Ptr& msg);
   void callbackGuiCmd_(const std_msgs::Float64Ptr& msg);
   void callbackTbCmd_(const std_msgs::Float64Ptr& msg);
+
+  bool callbackStart_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackShutdown_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+
   void callbackSpeedSetpoint_(const std_msgs::Float64Ptr& msg);
   bool callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   bool callbackSetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);

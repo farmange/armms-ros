@@ -6,6 +6,7 @@ find_package(catkin REQUIRED dynamic_reconfigure COMPONENTS
   roscpp
   rospy
   std_msgs
+  controller_manager_msgs
   controller_manager
   joy
 )

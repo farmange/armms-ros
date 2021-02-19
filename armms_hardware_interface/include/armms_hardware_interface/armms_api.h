@@ -31,6 +31,10 @@ public:
   //   int initializeKinovaAPIFunctions(KinovaAPIType connection_type);
   int loadLibrary(const char* kinova_comm_lib);
   int initializeActuator(float& jointPositionOptical);
+  int startMotorControl();
+  int stopMotorControl();
+  
+  int setPositionCommandExt(const float& jointCommand, float& jointPositionOptical, float& jointTorque);
   int setPositionCommand(const float& jointCommand, float& jointPositionOptical, float& jointTorque);
   int getJointStatesSetCommand(const float& jointCommand, float& jointPositionOptical, float& jointSpeed,
                                float& jointTorque);
@@ -39,7 +43,6 @@ private:
   ros::NodeHandle nh_;
   KinovaApi::APILayer* driver_;
   uint16_t jointAddress_;
-
 };
 
 }  // namespace armms

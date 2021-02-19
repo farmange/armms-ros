@@ -64,7 +64,7 @@ int ArmmsAPI::loadLibrary(const char* comm_lib)
 }
 
 // TODO documentation
-int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointPositionOptical, float& jointTorque)
+int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointPositionOptical, float& jointTorque)
 {
   float jointCurrent = 0.0;
   float jointPositionHall = 0.0;
@@ -86,10 +86,49 @@ int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointPosition
   return 1;
 }
 
+// TODO documentation
+int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointPositionOptical, float& jointTorque)
+{
+  float jointCurrent = 0.0;
+  float jointPositionHall = 0.0;
+  float jointSpeed = 0.0;
+  APILayer::ApiStatus_t status = driver_->setPositionCommand(jointAddress_, jointCommand, jointCurrent,
+                                                             jointPositionHall, jointSpeed, jointTorque);
+  if (status == APILayer::API_OK)
+  {
+    return 0;
+  }
+  return 1;
+}
+
 int ArmmsAPI::initializeActuator(float& jointPositionOptical)
 {
   APILayer::ApiStatus_t status;
   status = driver_->deviceInitialisation(jointAddress_, jointPositionOptical);
+
+  if (status == APILayer::API_OK)
+  {
+    return 0;
+  }
+  return 1;
+}
+
+int ArmmsAPI::startMotorControl()
+{
+  APILayer::ApiStatus_t status;
+  status = driver_->startMotorControl(jointAddress_);
+
+  if (status == APILayer::API_OK)
+  {
+    return 0;
+  }
+  return 1;
+}
+
+int ArmmsAPI::stopMotorControl()
+{
+  APILayer::ApiStatus_t status;
+  status = driver_->stopMotorControl(jointAddress_);
 
   if (status == APILayer::API_OK)
   {

@@ -21,7 +21,7 @@
 
 #include "ros/ros.h"
 
-namespace space_control
+namespace orthopus_addon
 {
 template <class T>
 class State

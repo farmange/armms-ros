@@ -1,6 +1,6 @@
-#include "armms_hardware_interface/kinovadrv/kinovadrv.h"
+#include "kinovadrv/kinovadrv.h"
 // #include "logger.h"
-#include "armms_hardware_interface/kinovadrv/Kinova.API.USBCommLayerUbuntu.h"
+#include "kinovadrv/Kinova.API.USBCommLayerUbuntu.h"
 
 #include <iostream>
 #include <sstream>
@@ -331,6 +331,28 @@ APILayer::ApiStatus_t APILayer::deviceInitialisation(const uint16_t& jointAddres
   ApiStatus_t status;
   CommLayer::message_t msgWrite, msgRead;
   msgWrite.Command = RS485_MSG_SET_ADDRESS;
+  msgWrite.SourceAddress = 0x00;
+  msgWrite.DestinationAddress = jointAddress;
+  msgWrite.DataLong[0] = jointAddress;
+  msgWrite.DataLong[1] = 0;
+  msgWrite.DataLong[2] = 0;
+  msgWrite.DataLong[3] = 0;
+
+  status = readWrite_(&msgWrite, &msgRead, getExpectedReply_(RS485_MSG_SET_ADDRESS));
+  if (status != API_OK)
+  {
+    return status;
+  }
+  jointPosition = msgRead.DataFloat[1];
+
+  return API_OK;
+}
+
+APILayer::ApiStatus_t APILayer::startMotorControl(const uint16_t& jointAddress)
+{
+  ApiStatus_t status;
+  CommLayer::message_t msgWrite, msgRead;
+  msgWrite.Command = RS485_MSG_ST;
   msgWrite.SourceAddress = 0x00;
   msgWrite.DestinationAddress = jointAddress;
   msgWrite.DataLong[0] = jointAddress;

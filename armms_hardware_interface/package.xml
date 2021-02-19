@@ -11,6 +11,7 @@
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>std_msgs</depend>
+  <depend>controller_manager_msgs</depend>
   <depend>controller_manager</depend>
   <depend>position_controllers</depend>
   <depend>joy</depend>

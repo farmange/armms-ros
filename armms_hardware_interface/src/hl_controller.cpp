@@ -19,10 +19,11 @@
 #include <cmath>
 #include "ros/ros.h"
 
+#include <controller_manager_msgs/SwitchController.h>
+// TODO replace all Empty service with Trigger (bool response)
 #include <armms_hardware_interface/hl_controller.h>
-
 /**
- * Warning : this package is only compatible with one joint (joint1) AT1X device
+ * Warning : For now this package is only compatible with the one joint (joint1) device AT1X
  */
 namespace orthopus_addon
 {
@@ -42,7 +43,7 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
   }
   else
   {
-    ROS_ERROR("Sampling frequency could not be lower or equal to zero : %d", sampling_freq_);
+    ROS_ERROR_NAMED("HLController", "Sampling frequency could not be lower or equal to zero : %d", sampling_freq_);
     ros::shutdown();
   }
   ros::Rate loop_rate = ros::Rate(sampling_freq_);
@@ -52,7 +53,7 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
    * slow down happened. Here, we will start to decrease the speed as soon as we will be under 15 degree from the
    * defined limit.
    */
-  const float reduced_speed_divisor = joint_max_speed_ / 15.0;
+  reduced_speed_divisor_ = joint_max_speed_ / 15.0;
 
   ROS_INFO_NAMED("HLController", "Waiting for /joint_states messages...");
   ros::topic::waitForMessage<sensor_msgs::JointState>("/joint_states");
@@ -62,19 +63,20 @@ HLController::HLController() : sampling_freq_(0.0), direction_(1), enable_upper_
 
   /* Initialize position command with initial joint position */
   cmd_.data = joint_angles_.data;
-
+  ROS_INFO_NAMED("HLController", "uninitializedEnter_");
+  input_event_requested_ = FsmInputEvent::Start;
   while (ros::ok())
   {
     ros::spinOnce();
 
     /**** FSM ****/
-    ROS_DEBUG("Current state is '%s' and input event is '%s'", engine_->getCurrentState()->getName().c_str(),
-              input_event_requested_.toString().c_str());
+    ROS_DEBUG_NAMED("HLController", "Current state is '%s' and input event is '%s'",
+                    engine_->getCurrentState()->getName().c_str(), input_event_requested_.toString().c_str());
 
     engine_->process();
     input_event_requested_ = FsmInputEvent::None;
     /*************/
-    
+
     loop_rate.sleep();
   }
 }
@@ -101,6 +103,8 @@ void HLController::initializePublishers_()
 void HLController::initializeServices_()
 {
   ROS_DEBUG_NAMED("HLController", "initializeServices");
+  start_service_ = n_.advertiseService("/start", &HLController::callbackStart_, this);
+  stop_service_ = n_.advertiseService("/shutdown", &HLController::callbackShutdown_, this);
   set_upper_limit_service_ = n_.advertiseService("/set_upper_limit", &HLController::callbackSetUpperLimit_, this);
   set_lower_limit_service_ = n_.advertiseService("/set_lower_limit", &HLController::callbackSetLowerLimit_, this);
   reset_upper_limit_service_ = n_.advertiseService("/reset_upper_limit", &HLController::callbackResetUpperLimit_, this);
@@ -109,6 +113,14 @@ void HLController::initializeServices_()
       n_.advertiseService("/enable_upper_limit", &HLController::callbackEnableUpperLimit_, this);
   enable_lower_limit_service_ =
       n_.advertiseService("/enable_lower_limit", &HLController::callbackEnableLowerLimit_, this);
+
+  ros::service::waitForService("/controller_manager/switch_controller");
+  ros::service::waitForService("/start_motor");
+  ros::service::waitForService("/stop_motor");
+  switch_ctrl_srv_ = n_.serviceClient<controller_manager_msgs::SwitchController>("/controller_manager/"
+                                                                                 "switch_controller");
+  start_motor_control_srv_ = n_.serviceClient<std_srvs::Empty>("/start_motor");
+  stop_motor_control_srv_ = n_.serviceClient<std_srvs::Empty>("/stop_motor");
 }
 
 void HLController::retrieveParameters_()
@@ -151,12 +163,16 @@ void HLController::initializeStateMachine_()
   tr_to_running_->registerConditionFcn(&HLController::trToRunning_);
   tr_to_running_->addInitialState(state_uninitialize_);
 
+  tr_test_ = new Transition<HLController>(this, state_running_);
+  tr_test_->registerConditionFcn(&HLController::trTest_);
+  tr_test_->addInitialState(state_shutting_down_);
+
   tr_to_shutting_down_ = new Transition<HLController>(this, state_shutting_down_);
   tr_to_shutting_down_->registerConditionFcn(&HLController::trToShuttingDown_);
-  tr_to_shutting_down_->addInitialState(state_uninitialized_);
+  tr_to_shutting_down_->addInitialState(state_uninitialize_);
   tr_to_shutting_down_->addInitialState(state_running_);
 
-  tr_error_success_ = new Transition<HLController>(this, state_uninitialized_);
+  tr_error_success_ = new Transition<HLController>(this, state_uninitialize_);
   tr_error_success_->registerConditionFcn(&HLController::trErrorSuccess_);
   tr_error_success_->addInitialState(state_error_processing_);
 
@@ -177,6 +193,7 @@ void HLController::initializeStateMachine_()
   engine_->registerTransition(tr_to_shutting_down_);
   engine_->registerTransition(tr_error_success_);
   engine_->registerTransition(tr_error_failure_);
+  engine_->registerTransition(tr_test_);
 
   engine_->setCurrentState(state_uninitialize_);
 }
@@ -184,20 +201,31 @@ void HLController::initializeStateMachine_()
 /****** FSM State function definition ******/
 void HLController::uninitializedEnter_()
 {
-
+  ROS_WARN_NAMED("HLController", "uninitializedEnter_");
+  // if (stopMotor_() != OK)
+  // {
+  //   status_ = ERROR;
+  // }
 }
 
 void HLController::runningEnter_()
 {
+  ROS_WARN_NAMED("HLController", "runningEnter_");
 
+  if (startMotor_() != OK)
+  {
+    status_ = ERROR;
+  }
 }
 
 void HLController::runningUpdate_()
 {
+  ROS_WARN_NAMED("HLController", "runningUpdate_");
+
   double input_velocity_cmd;
 
   /* Prioritize the input velocity command. GUI is higher priority so we take joypad command only
-    * if no GUI command is received */
+   * if no GUI command is received */
   if (gui_cmd_.data != 0.0)
   {
     input_velocity_cmd = gui_cmd_.data;
@@ -237,7 +265,7 @@ void HLController::runningUpdate_()
     }
   }
 
-  adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor);
+  adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor_);
   input_velocity_cmd *= direction_;
 
   ROS_INFO_NAMED("HLController", "input_velocity_cmd : %f", input_velocity_cmd);
@@ -261,33 +289,48 @@ void HLController::runningUpdate_()
 
 void HLController::shuttingDownEnter_()
 {
+  ROS_WARN_NAMED("HLController", "shuttingDownEnter_");
 
+  if (stopMotor_() != OK)
+  {
+    status_ = ERROR;
+  }
 }
 
 void HLController::errorProcessingEnter_()
 {
-  /* TODO do nothing : error is still present */
+  ROS_WARN_NAMED("HLController", "errorProcessingEnter_");
+
+  /* TODO : For now, all error lead to Finalized state. */
 }
 
 void HLController::finalizedEnter_()
 {
+  ROS_WARN_NAMED("HLController", "finalizedEnter_");
+
   ros::shutdown();
 }
 
 /******** FSM Transition definition ********/
 bool HLController::trErrorRaised_()
 {
-  return (status_ == ERROR);
+  // return (status_ == ERROR);
+  return false;
 }
 
 bool HLController::trToRunning_()
 {
-  return (input_event_requested_ == Start);
+  return (input_event_requested_ == FsmInputEvent::Start);
+}
+
+bool HLController::trTest_()
+{
+  return (input_event_requested_ == FsmInputEvent::Shutdown);
 }
 
 bool HLController::trToShuttingDown_()
 {
-  return (input_event_requested_ == Shutdown);
+  return (input_event_requested_ == FsmInputEvent::Shutdown);
 }
 
 bool HLController::trErrorSuccess_()
@@ -306,6 +349,63 @@ void HLController::init_()
   upper_limit_.data = NAN;
   lower_limit_.data = NAN;
   speed_setpoint_ = NAN;
+}
+
+HLController::status_t HLController::startMotor_()
+{
+  ROS_WARN_NAMED("HLController", "startMotor_");
+
+  controller_manager_msgs::SwitchController msgController;
+  std_srvs::Empty msgMotor;
+  msgController.request.start_controllers = { { "/at1x/controller/position/joint1" } };
+  msgController.request.stop_controllers = {};
+  msgController.request.strictness = 1;
+  if (!switch_ctrl_srv_.call(msgController))
+  {
+    ROS_ERROR_NAMED("HLController", "Problem occured during controller switch to start.");
+    /* TODO handle error here */
+  }
+  else
+  {
+    if (!start_motor_control_srv_.call(msgMotor))
+    {
+      ROS_ERROR_NAMED("HLController", "Problem occured during motor start.");
+      /* TODO handle error here */
+    }
+    else
+    {
+      return OK;
+    }
+  }
+  return ERROR;
+}
+
+HLController::status_t HLController::stopMotor_()
+{
+  ROS_WARN_NAMED("HLController", "stopMotor_");
+
+  controller_manager_msgs::SwitchController msgController;
+  std_srvs::Empty msgMotor;
+  msgController.request.start_controllers = {};
+  msgController.request.stop_controllers = { { "/at1x/controller/position/joint1" } };
+  if (!switch_ctrl_srv_.call(msgController))
+  {
+    ROS_ERROR_NAMED("HLController", "Problem occured during controller switch to stop.");
+    /* TODO handle error here */
+  }
+  else
+  {
+    if (!stop_motor_control_srv_.call(msgMotor))
+    {
+      ROS_ERROR_NAMED("HLController", "Problem occured during motor stop.");
+      /* TODO handle error here */
+    }
+    else
+    {
+      return OK;
+    }
+  }
+  return ERROR;
 }
 
 void HLController::handleLimits_(double& cmd)
@@ -407,9 +507,9 @@ void HLController::setLowerLimit_(const int joint_number, const float lower_limi
 
 void HLController::callbackJointStates_(const sensor_msgs::JointStatePtr& msg)
 {
-  ROS_DEBUG("callbackJointStates_");
+  ROS_DEBUG_NAMED("HLController", "callbackJointStates_");
   joint_angles_.data = direction_ * msg->position[0];
-  ROS_DEBUG("joint_angles_.data : %f", joint_angles_.data);
+  ROS_DEBUG_NAMED("HLController", "joint_angles_.data : %f", joint_angles_.data);
 }
 
 void HLController::callbackJoyCmd_(const std_msgs::Float64Ptr& msg)
@@ -430,6 +530,20 @@ void HLController::callbackTbCmd_(const std_msgs::Float64Ptr& msg)
 void HLController::callbackSpeedSetpoint_(const std_msgs::Float64Ptr& msg)
 {
   speed_setpoint_ = msg->data;
+}
+
+bool HLController::callbackStart_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("HLController", "callbackStart_");
+  input_event_requested_ = FsmInputEvent::Start;
+  return true;
+}
+
+bool HLController::callbackShutdown_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("HLController", "callbackShutdown_");
+  input_event_requested_ = FsmInputEvent::Shutdown;
+  return true;
 }
 
 // TODO improve services to handle multiple joints configuration (e.g. srv could take integer parameter)

@@ -18,6 +18,8 @@ namespace armms_hardware_interface
 ArmmsHardwareInterface::ArmmsHardwareInterface(ros::NodeHandle& nh) : nh_(nh), api_(nh)
 {
   init();
+  control_status = true;
+  initializeServices_();
   controller_manager_.reset(new controller_manager::ControllerManager(this, nh_));
   nh_.param("/at1x/hardware_interface/loop_hz", loop_hz_, 0.1);
   ros::Duration update_freq = ros::Duration(1.0 / loop_hz_);
@@ -26,6 +28,69 @@ ArmmsHardwareInterface::ArmmsHardwareInterface(ros::NodeHandle& nh) : nh_(nh), a
 
 ArmmsHardwareInterface::~ArmmsHardwareInterface()
 {
+}
+
+void ArmmsHardwareInterface::initializeServices_()
+{
+  start_control_service_ = nh_.advertiseService("/start_motor", &ArmmsHardwareInterface::callbackStartControl_, this);
+  stop_control_service_ = nh_.advertiseService("/stop_motor", &ArmmsHardwareInterface::callbackStopControl_, this);
+}
+
+bool ArmmsHardwareInterface::callbackStartControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsHardwareInterface", "callbackStartControl_");
+  float pos = 0;
+  control_status = false;
+  if (api_.startMotorControl() != 0)
+  {
+    ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "callbackStartControl_ Problem starting the motor control");
+    return false;
+  }
+  else
+  {
+    if (api_.initializeActuator(pos) != 0)
+    {
+      ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "callbackStartControl_ Problem with initializeActuator");
+      return false;
+    }
+    else
+    {
+      ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "callbackStartControl_ DEBUG Read position: " << pos);
+
+      float pos2 = 0, torque = 0;
+
+      if (api_.setPositionCommand(pos, pos2, torque) != 0)
+      {
+        ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "callbackStartControl_ Problem with setPositionCommand");
+        return false;
+      }
+      else
+      {
+      }
+    }
+  }
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "callbackStartControl_ Motor control started");
+  control_status = true;
+
+  return true;
+}
+
+bool ArmmsHardwareInterface::callbackStopControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsHardwareInterface", "callbackStopControl_");
+  if (api_.stopMotorControl() != 0)
+  {
+    ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem stopping the motor control");
+
+    return false;
+  }
+  else
+  {
+    control_status = false;
+  }
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Motor control stopped");
+
+  return true;
 }
 
 void ArmmsHardwareInterface::init()
@@ -81,7 +146,7 @@ void ArmmsHardwareInterface::init()
   ROS_INFO_STREAM_NAMED("ArmmsHardwareInterface", "Initialize ArmmsAPI...");
   if (api_.init(device, api_logging) != 0)
   {
-    ROS_FATAL("Failed to initialize API... Exit the node process !");
+    ROS_FATAL_NAMED("ArmmsHardwareInterface", "Failed to initialize API... Exit the node process !");
     exit(0);
   }
   initPosition();
@@ -95,9 +160,15 @@ void ArmmsHardwareInterface::init()
 void ArmmsHardwareInterface::update(const ros::TimerEvent& e)
 {
   elapsed_time_ = ros::Duration(e.current_real - e.last_real);
-  read();
+  if (control_status == true)
+  {
+    read();
+  }
   controller_manager_->update(ros::Time::now(), elapsed_time_);
-  write(elapsed_time_);
+  if (control_status == true)
+  {
+    write(elapsed_time_);
+  }
 }
 
 void ArmmsHardwareInterface::initPosition()
@@ -106,11 +177,11 @@ void ArmmsHardwareInterface::initPosition()
   {
     // joint_position_[i] = joint_position_[i] + 1;
     float pos = 0;
-    ROS_DEBUG_STREAM("Initialise " << joint_names_[i] << "... ");
+    ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Initialise " << joint_names_[i] << "... ");
 
     while (api_.initializeActuator(pos) != 0)
     {
-      ROS_WARN_STREAM("Fail to initialise " << joint_names_[i] << "! Try again !");
+      ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Fail to initialise " << joint_names_[i] << "! Try again !");
       // exit(0);
     }
     joint_position_[i] = pos;
@@ -125,12 +196,12 @@ void ArmmsHardwareInterface::read()
     float pos = 0;
     if (api_.initializeActuator(pos) == 0)
     {
-      ROS_DEBUG_STREAM("Read position: " << pos);
+      ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Read position: " << pos);
       joint_position_[i] = pos;
     }
     else
     {
-      ROS_WARN_STREAM("Problem reading the position of " << joint_names_[i] << " !");
+      ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem reading the position of " << joint_names_[i] << " !");
     }
   }
 }
@@ -143,17 +214,18 @@ void ArmmsHardwareInterface::write(ros::Duration elapsed_time)
     // ROBOT.getJoint(joint_names_[i]).actuate(joint_effort_command_[i]);
     float pos = 0, torque = 0;
 
-    if (api_.setPositionCommand(joint_position_command_[i], pos, torque) == 0)
+    if (api_.setPositionCommandExt(joint_position_command_[i], pos, torque) == 0)
     {
-      ROS_DEBUG_STREAM("Write position command: " << joint_position_command_[i]);
-      ROS_DEBUG("Read position : %f | torque : %f", pos, torque);
+      ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Write position command: " << joint_position_command_[i]);
+      ROS_DEBUG_NAMED("ArmmsHardwareInterface", "Read position : %f | torque : %f", pos, torque);
       joint_position_[i] = pos;
       joint_effort_[i] = torque;
     }
     else
     {
-      ROS_WARN_STREAM("Problem writing the position command of " << joint_names_[i] << " : "
-                                                                 << joint_position_command_[i] << "!");
+      ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem writing the position command of "
+                                                          << joint_names_[i] << " : " << joint_position_command_[i]
+                                                          << "!");
     }
   }
 }

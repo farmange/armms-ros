@@ -21,9 +21,9 @@
 
 #include "ros/ros.h"
 
-#include "orthopus_space_control/fsm/state.h"
+#include "armms_hardware_interface/fsm/state.h"
 
-namespace space_control
+namespace orthopus_addon
 {
 template <class T>
 class Transition
@@ -85,5 +85,5 @@ private:
   State<T>* final_state_;
   bool (T::*condition_ptr_)(void);
 };
-}
+}  // namespace orthopus_addon
 #endif

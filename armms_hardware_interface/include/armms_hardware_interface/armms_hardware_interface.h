@@ -11,6 +11,9 @@
 #include <controller_manager/controller_manager.h>
 #include <boost/scoped_ptr.hpp>
 #include <ros/ros.h>
+
+#include "std_srvs/Empty.h"
+
 // #include <ROBOTcpp/ROBOT.h>
 #include <armms_hardware_interface/armms_hardware.h>
 #include "armms_hardware_interface/armms_api.h"
@@ -41,6 +44,9 @@ protected:
   //   ROBOTcpp::ROBOT ROBOT;
   ros::NodeHandle nh_;
   ros::Timer non_realtime_loop_;
+  ros::ServiceServer start_control_service_;
+  ros::ServiceServer stop_control_service_;
+
   ros::Duration control_period_;
   ros::Duration elapsed_time_;
   PositionJointInterface positionJointInterface;
@@ -49,6 +55,12 @@ protected:
   boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
   double p_error_, v_error_, e_error_;
   armms::ArmmsAPI api_;
+  bool control_status;
+
+private:
+  void initializeServices_();
+  bool callbackStartControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackStopControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 };
 
 }  // namespace armms_hardware_interface

@@ -41,10 +41,10 @@ public:
       case None:
         msg = "None";
         break;
-      case JointPosition:
+      case Start:
         msg = "Start";
         break;
-      case SpacePosition:
+      case Shutdown:
         msg = "Shutdown";
         break;
       default:
@@ -69,6 +69,6 @@ public:
 private:
   FsmInputEventEnum input_event_;
 };
-}
+}  // namespace orthopus_addon
 
 #endif
