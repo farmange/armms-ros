@@ -24,7 +24,7 @@ namespace armms
 class ArmmsAPI
 {
 public:
-  ArmmsAPI(ros::NodeHandle nh);
+  ArmmsAPI();
   int init(const std::string device, const bool& debug_log = false);
   // int getPosition();
 

@@ -12,7 +12,7 @@ using namespace KinovaApi;
 
 namespace armms
 {
-ArmmsAPI::ArmmsAPI(ros::NodeHandle nh) : nh_(nh)
+ArmmsAPI::ArmmsAPI()
 {
 }
 
@@ -33,7 +33,9 @@ int ArmmsAPI::init(const std::string device, const bool& debug_log)
   ROS_INFO("Driver initialisation done.");
 
   int jointAddressParam = 0;
-  ros::param::get("/armms_hardware_interface/actuator_address", jointAddressParam);
+  // ros::param::get("/armms_hardware_interface/actuator_address", jointAddressParam);
+  ros::param::get("~actuator_address", jointAddressParam);
+
   jointAddress_ = static_cast<uint16_t>(jointAddressParam);
 
   return 0;

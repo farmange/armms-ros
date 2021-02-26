@@ -64,47 +64,46 @@ add_library(armms_libkinova
   include/kinovadrv/kinovadrv.h
 )
 
-# ARMMS driver node
-add_executable(armms_driver_node
-  src/nodes/armms_driver_node.cpp
-)
+# # ARMMS driver node
+# add_executable(armms_driver_node
+#   src/nodes/armms_driver_node.cpp
+# )
 
-add_dependencies(armms_driver_node ${catkin_EXPORTED_TARGETS})
+# add_dependencies(armms_driver_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(armms_libkinova ${catkin_LIBRARIES} dl)
-target_link_libraries(armms_driver_node ${catkin_LIBRARIES} dl)
-target_link_libraries(armms_driver_node ${catkin_LIBRARIES} armms_libkinova kinovadrv)
+# target_link_libraries(armms_driver_node ${catkin_LIBRARIES} dl)
+# target_link_libraries(armms_driver_node ${catkin_LIBRARIES} armms_libkinova kinovadrv)
 
 # ARMMS driver node
-add_executable(armms_hardware_interface_node
-src/nodes/armms_hardware_interface_node.cpp
+add_executable(armms_driver
+src/armms_driver.cpp
 src/armms_hardware_interface.cpp
 )
-target_link_libraries(armms_hardware_interface_node 
+target_link_libraries(armms_driver 
   ${catkin_LIBRARIES} ${Boost_LIBRARIES})
-# target_link_libraries(armms_driver_node ${catkin_LIBRARIES} dl)
-target_link_libraries(armms_hardware_interface_node ${catkin_LIBRARIES} armms_libkinova kinovadrv)
+target_link_libraries(armms_driver ${catkin_LIBRARIES} armms_libkinova kinovadrv)
 
 
-############ hl controller
-add_executable(hl_controller
-  src/hl_controller.cpp  
-)
-target_link_libraries(hl_controller ${catkin_LIBRARIES})
-add_dependencies(hl_controller ${catkin_EXPORTED_TARGETS})
+# ############ hl controller
+# add_executable(hl_controller
+#   src/hl_controller.cpp  
+# )
+# target_link_libraries(hl_controller ${catkin_LIBRARIES})
+# add_dependencies(hl_controller ${catkin_EXPORTED_TARGETS})
 
-############ device freejoy 
-add_executable(device_freejoy
-  src/device_freejoy.cpp
-)
-target_link_libraries(device_freejoy ${catkin_LIBRARIES})
-add_dependencies(device_freejoy ${catkin_EXPORTED_TARGETS})
+# ############ device freejoy 
+# add_executable(device_freejoy
+#   src/device_freejoy.cpp
+# )
+# target_link_libraries(device_freejoy ${catkin_LIBRARIES})
+# add_dependencies(device_freejoy ${catkin_EXPORTED_TARGETS})
 
-############ device twin_button 
-add_executable(device_twin_button
-  src/device_twin_button.cpp
-)
-target_link_libraries(device_twin_button ${catkin_LIBRARIES} wiringPi rt)
-add_dependencies(device_twin_button ${catkin_EXPORTED_TARGETS})
+# ############ device twin_button 
+# add_executable(device_twin_button
+#   src/device_twin_button.cpp
+# )
+# target_link_libraries(device_twin_button ${catkin_LIBRARIES} wiringPi rt)
+# add_dependencies(device_twin_button ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##
@@ -126,7 +125,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 
 ## Mark executables and/or libraries for installation
-install(TARGETS armms_hardware_interface_node 
+install(TARGETS armms_driver 
 # kinova_tf_updater
 # kinova_interactive_control
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

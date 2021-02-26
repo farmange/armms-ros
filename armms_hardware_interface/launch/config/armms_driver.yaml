@@ -1,0 +1,13 @@
+# Settings for ros_control control loop
+hardware_control_loop:
+    loop_hz: 100
+
+# Publish all joint states -----------------------
+joint_state_controller:
+    type: "joint_state_controller/JointStateController"
+    publish_rate: 100
+    
+ros_control_loop_frequency: 100.0
+api_logging: true
+device: "/dev/ttyACM0"
+actuator_address : 19

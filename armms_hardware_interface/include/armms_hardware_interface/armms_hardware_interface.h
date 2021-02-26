@@ -33,41 +33,23 @@ static const double VELOCITY_STEP_FACTOR = 10;
 class ArmmsHardwareInterface : public armms_hardware_interface::ArmmsHardware
 {
 public:
-  ArmmsHardwareInterface(ros::NodeHandle& nh);
+  ArmmsHardwareInterface(armms::ArmmsAPI* comm);
   ~ArmmsHardwareInterface();
-  void init();
-  void initPosition();
-  void update(const ros::TimerEvent& e);
+  // void init();
+  // void initPosition();
+  // void update(const ros::TimerEvent& e);
   void read();
-  void write(ros::Duration elapsed_time);
+  void enforceLimit(ros::Duration elapsed_time);
+  void write();
 
-protected:
-  //   ROBOTcpp::ROBOT ROBOT;
+private:
   ros::NodeHandle nh_;
-  ros::Timer non_realtime_loop_;
+  armms::ArmmsAPI* comm_;
   ros::ServiceServer start_control_service_;
   ros::ServiceServer stop_control_service_;
 
-  ros::Duration control_period_;
-  ros::Duration elapsed_time_;
   PositionJointInterface positionJointInterface;
   PositionJointSoftLimitsInterface positionJointSoftLimitsInterface;
-  VelocityJointInterface velocityJointInterface;
-
-  double loop_hz_;
-  boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
-  double p_error_, v_error_, e_error_;
-  armms::ArmmsAPI api_;
-  bool control_status;
-  bool reset_controller_;
-  std::mutex lock_;
-
-private:
-  void initializeServices_();
-  bool callbackStartControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-  bool callbackStopControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
-  void initializeSubscribers_();
-  void callbackVelocitySetPoint_(const std_msgs::Float64Ptr& msg);
 };
 
 }  // namespace armms_hardware_interface
