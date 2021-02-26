@@ -12,6 +12,7 @@ int main(int argc, char** argv)
 
   ros::MultiThreadedSpinner spinner(0);
   spinner.spin(&ros_queue);
-  spinner.spin();
+  // ros::AsyncSpinner spinner(1);
+  // spinner.start();
   return 0;
 }

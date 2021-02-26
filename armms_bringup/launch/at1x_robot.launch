@@ -1,6 +1,6 @@
 <launch>
 
-  <!-- <arg name="use_urdf" default="true"/> -->
+  <arg name="use_urdf" default="true"/>
   <arg name="armms_robotType" default="at1x" />
   <arg name="armms_robotName" default="$(arg armms_robotType)"/>
 	<!-- <arg name="kinova_robotSerial" default="not_set" />
@@ -17,7 +17,6 @@
     <param name="status_interval_seconds" value="$(arg feedback_publish_rate)" />
   </node> -->
     
-  <include file="$(find armms_hardware_interface)/launch/at1x_controller.launch" />
 
   <!-- <node name="$(arg armms_robotName)_controller" pkg="armms_controller" type="armms_controller_node" output="screen" cwd="node" args="$(arg armms_robotType)">
     <rosparam file="$(find armms_bringup)/launch/config/robot_parameters.yaml" command="load" />
@@ -33,13 +32,11 @@
     </node>
   </group> -->
 
-  <!-- <group if="$(arg use_urdf)">
-    <param name="robot_description" command="$(find xacro)/xacro.py '$(find kinova_description)/urdf/$(arg kinova_robotType)_standalone.xacro'" />
-    <node name="$(arg kinova_robotName)_state_publisher"
-           pkg="robot_state_publisher"
-          type="robot_state_publisher">
-      <remap from="joint_states" to="/$(arg kinova_robotName)_driver/out/joint_state"/>
-    </node>
-  </group> -->
+  <group if="$(arg use_urdf)">
+    <!-- <param name="robot_description" textfile="$(find armms_description)/urdf/at1x.urdf"/> -->
+  </group>
+
+  <include file="$(find armms_hardware_interface)/launch/at1x_controller.launch" />
+
 
 </launch>

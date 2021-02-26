@@ -109,14 +109,15 @@ namespace KinovaApi
         virtual ~APILayer(){};
         ApiStatus_t init(const std::string device, const bool &debug_log = false);
         ApiStatus_t deviceInitialisation(const uint16_t &jointAddress, float &jointPosition);
+        ApiStatus_t clearError(const uint16_t &jointAddress);
         ApiStatus_t startMotorControl(const uint16_t &jointAddress);
         ApiStatus_t stopMotorControl(const uint16_t &jointAddress);
         ApiStatus_t getActualPosition(const uint16_t &jointAddress, float &jointCurrent, float &jointPositionHall, float &jointSpeed, float &jointTorque);
         ApiStatus_t setCommandAllValue(const uint16_t &jointAddress, const float &jointCommand, float &jointCurrent, float &jointPositionHall,
                                        float &jointSpeed, float &jointTorque, float &jointPMW, float &jointPositionOptical,
                                        short &jointAccelX, short &jointAccelY, short &jointAccelZ, short &jointTemp);
-        ApiStatus_t setPositionCommand(const uint16_t& jointAddress, const float& jointCommand, float& jointCurrent,
-                                 float& jointPositionHall, float& jointSpeed, float& jointTorque);
+        ApiStatus_t setPositionCommand(const uint16_t &jointAddress, const float &jointCommand, float &jointCurrent,
+                                       float &jointPositionHall, float &jointSpeed, float &jointTorque);
         ApiStatus_t getPosition();
 
     private:

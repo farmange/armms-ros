@@ -11,6 +11,7 @@
 #include <controller_manager/controller_manager.h>
 #include <boost/scoped_ptr.hpp>
 #include <ros/ros.h>
+#include <mutex>  // std::mutex
 
 #include "std_srvs/Empty.h"
 
@@ -51,16 +52,22 @@ protected:
   ros::Duration elapsed_time_;
   PositionJointInterface positionJointInterface;
   PositionJointSoftLimitsInterface positionJointSoftLimitsInterface;
+  VelocityJointInterface velocityJointInterface;
+
   double loop_hz_;
   boost::shared_ptr<controller_manager::ControllerManager> controller_manager_;
   double p_error_, v_error_, e_error_;
   armms::ArmmsAPI api_;
   bool control_status;
+  bool reset_controller_;
+  std::mutex lock_;
 
 private:
   void initializeServices_();
   bool callbackStartControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
   bool callbackStopControl_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  void initializeSubscribers_();
+  void callbackVelocitySetPoint_(const std_msgs::Float64Ptr& msg);
 };
 
 }  // namespace armms_hardware_interface

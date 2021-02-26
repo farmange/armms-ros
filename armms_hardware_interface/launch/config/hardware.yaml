@@ -1,5 +1,5 @@
 at1x:
-  api_logging: true
+  api_logging: false
   device: "/dev/ttyACM0"
   hardware_interface:
      loop_hz: 100 # hz

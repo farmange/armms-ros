@@ -31,6 +31,8 @@ public:
   //   int initializeKinovaAPIFunctions(KinovaAPIType connection_type);
   int loadLibrary(const char* kinova_comm_lib);
   int initializeActuator(float& jointPositionOptical);
+  
+  int clearError();
   int startMotorControl();
   int stopMotorControl();
   

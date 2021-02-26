@@ -27,8 +27,8 @@ public:
   enum FsmInputEventEnum
   {
     None = 0,
-    Start,
-    Shutdown
+    ButtonShortPress,
+    ButtonLongPress
   };
 
   FsmInputEvent() = default;
@@ -41,11 +41,11 @@ public:
       case None:
         msg = "None";
         break;
-      case Start:
-        msg = "Start";
+      case ButtonShortPress:
+        msg = "ButtonShortPress";
         break;
-      case Shutdown:
-        msg = "Shutdown";
+      case ButtonLongPress:
+        msg = "ButtonLongPress";
         break;
       default:
         msg = "NaN";

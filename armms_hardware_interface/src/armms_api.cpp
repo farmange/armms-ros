@@ -113,6 +113,18 @@ int ArmmsAPI::initializeActuator(float& jointPositionOptical)
   return 1;
 }
 
+int ArmmsAPI::clearError()
+{
+  APILayer::ApiStatus_t status;
+  status = driver_->clearError(jointAddress_);
+
+  if (status == APILayer::API_OK)
+  {
+    return 0;
+  }
+  return 1;
+}
+
 int ArmmsAPI::startMotorControl()
 {
   APILayer::ApiStatus_t status;

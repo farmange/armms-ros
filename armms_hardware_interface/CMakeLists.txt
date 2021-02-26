@@ -3,6 +3,7 @@ project(armms_hardware_interface)
 add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED dynamic_reconfigure COMPONENTS
+  armms_msgs
   roscpp
   rospy
   std_msgs
@@ -17,7 +18,7 @@ link_directories(${PROJECT_SOURCE_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES armms_hardware_interface
-  CATKIN_DEPENDS roscpp rospy std_msgs controller_manager
+  CATKIN_DEPENDS armms_msgs roscpp rospy std_msgs controller_manager
 #  DEPENDS system_lib
 )
 

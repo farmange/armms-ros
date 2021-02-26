@@ -8,4 +8,8 @@ at1x:
         type: position_controllers/JointPositionController
         joint: joint1
         pid: {p: 0.0, i: 0.0, d: 0.0}
-
+    velocity:
+      joint1:
+        type: velocity_controllers/JointVelocityController
+        joint: joint1
+        pid: {p: 0.0, i: 0.0, d: 0.0}

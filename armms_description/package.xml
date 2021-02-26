@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>armms_description</name>
+  <version>0.0.1</version>
+  <description>ARMMS robot description</description>
+  <author email="florian.armange@orthopus.com">Florian Armange (ORTHOPUS)</author>
+  <maintainer email="florian.armange@orthopus.com">ORTHOPUS</maintainer>
+  <license>LGPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>urdf</depend>
+  <depend>xacro</depend>
+
+  <export>
+  </export>
+</package>
