@@ -77,27 +77,31 @@ public:
 
     while (ros::ok())
     {
-      ROS_INFO_NAMED("ArmmsDriver", "in while");
+      ROS_DEBUG_NAMED("ArmmsDriver", "Read...");
 
       robot->read();
-      current_time = ros::Time::now();
-      elapsed_time = ros::Duration(current_time - last_time);
-      last_time = current_time;
-
-      if (flag_reset_controllers)
+      if (robot->getStatus() == ArmmsHardwareInterface::OK)
       {
-        // robot->setCommandToCurrentPosition();
-        cm->update(ros::Time::now(), elapsed_time, true);
-        flag_reset_controllers = false;
-      }
-      else
-      {
-        cm->update(ros::Time::now(), elapsed_time, false);
-      }
-      robot->enforceLimit(elapsed_time);
+        ROS_DEBUG_NAMED("ArmmsDriver", "Read OK");
 
-      robot->write();
+        current_time = ros::Time::now();
+        elapsed_time = ros::Duration(current_time - last_time);
+        last_time = current_time;
 
+        if (flag_reset_controllers)
+        {
+          // robot->setCommandToCurrentPosition();
+          cm->update(ros::Time::now(), elapsed_time, true);
+          flag_reset_controllers = false;
+        }
+        else
+        {
+          cm->update(ros::Time::now(), elapsed_time, false);
+        }
+        robot->enforceLimit(elapsed_time);
+
+        robot->write();
+      }
       ros_control_loop_rate->sleep();
     }
   }

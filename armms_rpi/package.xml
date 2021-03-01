@@ -1,23 +1,17 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>armms_hardware_interface</name>
+  <name>armms_rpi</name>
   <version>0.0.1</version>
-  <description>The ARMMS driver provides a ROS hardware interface for the ARMMS components. </description>
+  <description>The ARMMS RPI provides all low level access of the RPI (GPIO).</description>
   <author email="florian.armange@orthopus.com">Florian Armange (ORTHOPUS)</author>
   <maintainer email="florian.armange@orthopus.com">ORTHOPUS</maintainer>
   <license>LGPLv3</license>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>message_generation</depend>
-  <depend>message_runtime</depend>
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>std_msgs</depend>
   <depend>armms_msgs</depend>
-  <depend>controller_manager_msgs</depend>
-  <depend>controller_manager</depend>
-  <depend>position_controllers</depend>
-  <depend>joy</depend>
   <export>
   </export>
 </package>

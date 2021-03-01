@@ -16,7 +16,7 @@
 #include <mutex>
 
 #define MAX_READ_RETRY 10
-#define MAX_WRITE_RETRY 10
+#define MAX_WRITE_RETRY 4
 namespace KinovaApi
 {
     class CommLayer

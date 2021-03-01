@@ -18,9 +18,11 @@ namespace armms_hardware_interface
 ArmmsHardwareInterface::ArmmsHardwareInterface(armms::ArmmsAPI* comm) : comm_(comm)
 {
   ROS_INFO("Starting ARMMS Hardware Interface...");
-
+  status_ = OK;
   // Resize vectors
   int num_joints_ = 1;
+  joint_names_.resize(num_joints_);
+  joint_names_[0] = "joint1";
   joint_position_.resize(num_joints_);
   joint_velocity_.resize(num_joints_);
   joint_effort_.resize(num_joints_);
@@ -59,6 +61,7 @@ void ArmmsHardwareInterface::read()
   ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "read");
 
   float pos = 0;
+
   if (comm_->initializeActuator(pos) == 0)
   {
     ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Read position: " << pos);
@@ -67,12 +70,16 @@ void ArmmsHardwareInterface::read()
   else
   {
     ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem reading the position of " << joint_names_[0] << " !");
+    status_ = READ_ERROR;
+    return;
   }
+  status_ = OK;
 }
 
 void ArmmsHardwareInterface::enforceLimit(ros::Duration elapsed_time)
 {
   positionJointSoftLimitsInterface.enforceLimits(elapsed_time);
+  status_ = OK;
 }
 
 void ArmmsHardwareInterface::write()
@@ -92,6 +99,15 @@ void ArmmsHardwareInterface::write()
     ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem writing the position command of "
                                                         << joint_names_[0] << " : " << joint_position_command_[0]
                                                         << "!");
+    status_ = WRITE_ERROR;
+    return;
   }
+  status_ = OK;
 }
+
+ArmmsHardwareInterface::status_t ArmmsHardwareInterface::getStatus()
+{
+  return status_;
+}
+
 }  // namespace armms_hardware_interface

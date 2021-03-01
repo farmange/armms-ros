@@ -38,5 +38,8 @@
 
   <include file="$(find armms_hardware_interface)/launch/at1x_controller.launch" />
 
+    <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
+        <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
+    </node>
 
 </launch>

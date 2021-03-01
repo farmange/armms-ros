@@ -1,0 +1,22 @@
+#
+#  ### Params of the orthopus addon ###
+#
+sampling_frequency          : 100     # Hz
+direction                   : 1      # Invert motor controll direction
+
+# Pin definition using Raspberry Pi numbering
+user_up_btn_pin             : 24
+user_down_btn_pin           : 25
+power_button_pin            : 23
+switch_limit_pin            : 7
+red_led_pin                 : 0
+green_led_pin               : 2
+blue_led_pin                : 3
+supply_en_pin               : 12
+
+short_press_duration        : 0.2
+long_press_duration         : 4.0
+
+twin_button_velocity        : 8.0
+actuator_address            : 19
+close_loop_control          : false

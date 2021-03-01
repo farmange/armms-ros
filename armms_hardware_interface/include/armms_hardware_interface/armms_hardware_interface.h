@@ -33,6 +33,12 @@ static const double VELOCITY_STEP_FACTOR = 10;
 class ArmmsHardwareInterface : public armms_hardware_interface::ArmmsHardware
 {
 public:
+  typedef enum status_e
+  {
+    OK = 0,
+    READ_ERROR,
+    WRITE_ERROR
+  } status_t;
   ArmmsHardwareInterface(armms::ArmmsAPI* comm);
   ~ArmmsHardwareInterface();
   // void init();
@@ -41,13 +47,14 @@ public:
   void read();
   void enforceLimit(ros::Duration elapsed_time);
   void write();
+  status_t getStatus();
 
 private:
   ros::NodeHandle nh_;
   armms::ArmmsAPI* comm_;
   ros::ServiceServer start_control_service_;
   ros::ServiceServer stop_control_service_;
-
+  status_t status_;
   PositionJointInterface positionJointInterface;
   PositionJointSoftLimitsInterface positionJointSoftLimitsInterface;
 };
