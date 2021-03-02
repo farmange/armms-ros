@@ -16,8 +16,8 @@
 #include "std_srvs/Empty.h"
 
 // #include <ROBOTcpp/ROBOT.h>
-#include <armms_hardware_interface/armms_hardware.h>
-#include "armms_hardware_interface/armms_api.h"
+#include "armms_driver/armms_hardware.h"
+#include "armms_driver/armms_api.h"
 
 using namespace hardware_interface;
 using joint_limits_interface::JointLimits;
@@ -44,8 +44,10 @@ public:
   // void init();
   // void initPosition();
   // void update(const ros::TimerEvent& e);
+  void setCommandToCurrentPosition();
   void read();
   void enforceLimit(ros::Duration elapsed_time);
+  void resetLimit();
   void write();
   status_t getStatus();
 
@@ -55,6 +57,8 @@ private:
   ros::ServiceServer start_control_service_;
   ros::ServiceServer stop_control_service_;
   status_t status_;
+  int read_error_count_;
+  int write_error_count_;
   PositionJointInterface positionJointInterface;
   PositionJointSoftLimitsInterface positionJointSoftLimitsInterface;
 };

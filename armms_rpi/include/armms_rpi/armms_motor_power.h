@@ -11,6 +11,9 @@
 #define ARMMS_RPI_MOTOR_POWER_H
 
 #include <ros/ros.h>
+#include <wiringPi.h>
+#include "std_msgs/Bool.h"
+#include "armms_msgs/SetMotorPower.h"
 
 namespace armms_rpi
 {
@@ -18,10 +21,19 @@ class ArmmsMotorPower
 {
 public:
   ArmmsMotorPower(const ros::NodeHandle& nh);
+  void update();
 
 private:
   ros::NodeHandle nh_;
-};
+  ros::Publisher motor_power_pub_;
+  ros::ServiceServer set_motor_power_service_;
+  int motor_power_pin_;
+  int motor_power_state_;
 
+  void retrieveParameters_();
+  void initializePublishers_();
+  void initializeServices_();
+  bool callbackSetMotorPower_(armms_msgs::SetMotorPower::Request& req, armms_msgs::SetMotorPower::Response& res);
+};
 }  // namespace armms_rpi
 #endif

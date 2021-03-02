@@ -1,0 +1,4 @@
+#
+#  ### Params of the AT1X controller ###
+#
+sampling_frequency          : 100     # Hz

@@ -49,6 +49,7 @@ if (${ARCHITECTURE} MATCHES "aarch64")
     target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES} 
         -lwiringPi
+        -lrt
     )
 else()
     message(STATUS "wiringPi library not required")

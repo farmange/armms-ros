@@ -3,43 +3,20 @@
   <arg name="use_urdf" default="true"/>
   <arg name="armms_robotType" default="at1x" />
   <arg name="armms_robotName" default="$(arg armms_robotType)"/>
-	<!-- <arg name="kinova_robotSerial" default="not_set" />
-	<arg name="use_jaco_v1_fingers" default="false" /> -->
-	<arg name="feedback_publish_rate" default="0.1" />
 
-  <!-- If the node handles multiple robots uncomment this and configure /config/multiple_robots.yaml" -->
-	<!-- <rosparam file="$(find armms_bringup)/launch/config/multiple_robots.yaml" command="load" /> -->
-
-  <!-- <node name="$(arg armms_robotName)_driver" pkg="armms_hardware_interface" type="armms_driver_node" output="screen" cwd="node" args="$(arg armms_robotType)">
-    <rosparam file="$(find armms_bringup)/launch/config/robot_parameters.yaml" command="load" />
-    <param name="robot_name" value="$(arg armms_robotName)" />   
-    <param name="robot_type" value="$(arg armms_robotType)" />   
-    <param name="status_interval_seconds" value="$(arg feedback_publish_rate)" />
-  </node> -->
-    
-
-  <!-- <node name="$(arg armms_robotName)_controller" pkg="armms_controller" type="armms_controller_node" output="screen" cwd="node" args="$(arg armms_robotType)">
-    <rosparam file="$(find armms_bringup)/launch/config/robot_parameters.yaml" command="load" />
-    <param name="robot_name" value="$(arg armms_robotName)" />   
-    <param name="robot_type" value="$(arg armms_robotType)" />   
-    <param name="status_interval_seconds" value="$(arg feedback_publish_rate)" />
-  </node> -->
-
-  <!-- <group unless="$(arg use_urdf)">
-    <node name="$(arg kinova_robotName)_tf_updater" pkg="kinova_driver" type="kinova_tf_updater" output="screen" cwd="node" args="$(arg kinova_robotType)">
-      <remap from="/$(arg kinova_robotName)_tf_updater/in/joint_angles" to="/$(arg kinova_robotName)_driver/out/joint_angles"/>
-      <param name="base_frame" value="root"/>
-    </node>
-  </group> -->
-
+<!--
   <group if="$(arg use_urdf)">
-    <!-- <param name="robot_description" textfile="$(find armms_description)/urdf/at1x.urdf"/> -->
+      <param name="robot_description" textfile="$(find armms_description)/urdf/at1x.urdf"/> 
   </group>
+-->
+  <include file="$(find armms_driver)/launch/at1x_controller.launch" />
 
-  <include file="$(find armms_hardware_interface)/launch/at1x_controller.launch" />
+  <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
+      <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
+  </node>
 
-    <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
-        <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
-    </node>
-
+  <node name="armms_at1x_control_node" pkg="armms_control" type="armms_at1x_control" output="screen">
+      <rosparam file="$(find armms_control)/launch/config/at1x_control_settings.yaml" /> 
+  </node>
+  
 </launch>

@@ -20,8 +20,8 @@
 #include "std_srvs/Empty.h"
 #include "std_msgs/Float64.h"
 
-#include <armms_hardware_interface/freejoy_config.h>
-#include "armms_hardware_interface/device_freejoy.h"
+#include "armms_driver/freejoy_config.h"
+#include "armms_driver/device_freejoy.h"
 
 namespace input_device
 {

@@ -1,10 +1,5 @@
-#include <sstream>
-#include <armms_hardware_interface/armms_hardware_interface.h>
-#include <joint_limits_interface/joint_limits_interface.h>
-#include <joint_limits_interface/joint_limits.h>
-#include <joint_limits_interface/joint_limits_urdf.h>
-#include <joint_limits_interface/joint_limits_rosparam.h>
-// #include <ROBOTcpp/ROBOT.h>
+
+#include "armms_driver/armms_hardware_interface.h"
 
 using namespace hardware_interface;
 using namespace joint_limits_interface;
@@ -41,7 +36,26 @@ ArmmsHardwareInterface::ArmmsHardwareInterface(armms::ArmmsAPI* comm) : comm_(co
   JointHandle jointPositionHandle(jointStateHandle, &joint_position_command_[0]);
   JointLimits limits;
   SoftJointLimits softLimits;
+
   getJointLimits("joint1", nh_, limits);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Debug limit :");
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.min_position: " << limits.min_position);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.max_position: " << limits.max_position);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.max_velocity: " << limits.max_velocity);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.max_acceleration: " << limits.max_acceleration);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.max_jerk: " << limits.max_jerk);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "limits.max_effort: " << limits.max_effort);
+
+  ros::param::get("/joint_limits/joint1/soft_min_position", softLimits.min_position);
+  ros::param::get("/joint_limits/joint1/soft_max_position", softLimits.max_position);
+  ros::param::get("/joint_limits/joint1/k_position", softLimits.k_position);
+  ros::param::get("/joint_limits/joint1/k_velocity", softLimits.k_velocity);
+
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "softLimits.min_position: " << softLimits.min_position);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "softLimits.max_position: " << softLimits.max_position);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "softLimits.k_position: " << softLimits.k_position);
+  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "softLimits.k_velocity: " << softLimits.k_velocity);
+
   PositionJointSoftLimitsHandle jointLimitsHandle(jointPositionHandle, limits, softLimits);
   positionJointSoftLimitsInterface.registerHandle(jointLimitsHandle);
   position_joint_interface_.registerHandle(jointPositionHandle);
@@ -49,16 +63,22 @@ ArmmsHardwareInterface::ArmmsHardwareInterface(armms::ArmmsAPI* comm) : comm_(co
   registerInterface(&position_joint_interface_);
   registerInterface(&positionJointSoftLimitsInterface);
 
-  ROS_INFO("Interfaces registered.");
+  ROS_INFO_NAMED("ArmmsHardwareInterface", "Interfaces registered.");
 }
 
 ArmmsHardwareInterface::~ArmmsHardwareInterface()
 {
 }
 
+void ArmmsHardwareInterface::setCommandToCurrentPosition()
+{
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "setCommandToCurrentPosition (joint_position : %f)", joint_position_[0]);
+  position_joint_interface_.getHandle("joint1").setCommand(joint_position_[0]);
+}
+
 void ArmmsHardwareInterface::read()
 {
-  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "read");
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "read");
 
   float pos = 0;
 
@@ -66,25 +86,38 @@ void ArmmsHardwareInterface::read()
   {
     ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "Read position: " << pos);
     joint_position_[0] = pos;
+    read_error_count_ = 0;
   }
   else
   {
     ROS_WARN_STREAM_NAMED("ArmmsHardwareInterface", "Problem reading the position of " << joint_names_[0] << " !");
-    status_ = READ_ERROR;
+    // status_ = READ_ERROR;
+    if (read_error_count_ < 10)
+    {
+      read_error_count_++;
+    }
+
     return;
   }
-  status_ = OK;
+  // status_ = OK;
 }
 
 void ArmmsHardwareInterface::enforceLimit(ros::Duration elapsed_time)
 {
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "enforceLimit");
   positionJointSoftLimitsInterface.enforceLimits(elapsed_time);
   status_ = OK;
 }
 
+void ArmmsHardwareInterface::resetLimit()
+{
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "resetLimit");
+  positionJointSoftLimitsInterface.reset();
+}
+
 void ArmmsHardwareInterface::write()
 {
-  ROS_DEBUG_STREAM_NAMED("ArmmsHardwareInterface", "write");
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "write");
   float pos = 0, torque = 0;
 
   if (comm_->setPositionCommandExt(joint_position_command_[0], pos, torque) == 0)
@@ -107,7 +140,14 @@ void ArmmsHardwareInterface::write()
 
 ArmmsHardwareInterface::status_t ArmmsHardwareInterface::getStatus()
 {
-  return status_;
+  ROS_DEBUG_NAMED("ArmmsHardwareInterface", "getStatus (read error count : %d)", read_error_count_);
+
+  if (read_error_count_ >= 10)
+  {
+    return READ_ERROR;
+  }
+  return OK;
+  // return status_;
 }
 
 }  // namespace armms_hardware_interface

@@ -7,7 +7,7 @@
 //============================================================================
 
 // #include "kinovadrv/kinovadrv.h"
-#include "armms_hardware_interface/armms_api.h"
+#include "armms_driver/armms_api.h"
 
 // #include "kinova_driver/kinova_tool_pose_action.h"
 // #include "kinova_driver/kinova_joint_angles_action.h"

@@ -31,10 +31,10 @@
 #include "armms_msgs/SetLedColor.h"
 #include "armms_msgs/ButtonEvent.h"
 
-#include "armms_hardware_interface/robot_manager_fsm.h"
-#include "armms_hardware_interface/fsm/engine.h"
-#include "armms_hardware_interface/fsm/state.h"
-#include "armms_hardware_interface/fsm/transition.h"
+#include "armms_driver/robot_manager_fsm.h"
+#include "armms_driver/fsm/engine.h"
+#include "armms_driver/fsm/state.h"
+#include "armms_driver/fsm/transition.h"
 
 // TODO change namespace
 namespace orthopus_addon
@@ -110,6 +110,7 @@ private:
 
   /* FSM input event (what is allowed to do from user point of view) */
   FsmInputEvent input_event_requested_;
+
   typedef enum status_e
   {
     OK = 0,

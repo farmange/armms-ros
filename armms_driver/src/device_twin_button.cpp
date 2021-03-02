@@ -20,7 +20,7 @@
 #include "std_srvs/Empty.h"
 #include "std_msgs/Float64.h"
 
-#include "armms_hardware_interface/device_twin_button.h"
+#include "armms_driver/device_twin_button.h"
 #include <wiringPi.h>
 #include <softPwm.h>  // pthread ?
 
@@ -269,7 +269,7 @@ void DeviceTwinButton::processInputs_()
   /* Low side commutation */
   up_btn_state_ = 1 - digitalRead(up_pin_);
   down_btn_state_ = 1 - digitalRead(down_pin_);
-  power_btn_state_ = 1 - digitalRead(limit_switch_state_);
+  limit_switch_state_ = 1 - digitalRead(limit_switch_pin_);
   /* High side commutation */
   power_btn_state_ = digitalRead(power_pin_);
 

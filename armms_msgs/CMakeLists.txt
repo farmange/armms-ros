@@ -17,6 +17,7 @@ add_service_files(
   FILES
   ButtonEvent.srv
   SetLedColor.srv
+  SetMotorPower.srv
 )
 
 # add_action_files(DIRECTORY action

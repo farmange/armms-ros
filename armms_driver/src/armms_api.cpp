@@ -5,7 +5,7 @@
 // Copyright   : LGPLv3
 //============================================================================
 
-#include "armms_hardware_interface/armms_api.h"
+#include "armms_driver/armms_api.h"
 #include "kinovadrv/kinovadrv.h"
 
 using namespace KinovaApi;

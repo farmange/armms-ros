@@ -11,6 +11,15 @@ namespace armms_rpi
 {
 ArmmsRpi::ArmmsRpi()
 {
+  sampling_frequency_ = 0;
+  retrieveParameters_();
+
+  if (wiringPiSetup() == -1)
+  {
+    ROS_ERROR("wiringPiSetup error !");
+    return;
+  }
+
   ROS_INFO("Create power button led");
   power_button_led_.reset(new ArmmsPowerButtonLed(nh_));
   ROS_INFO("Create user button");
@@ -19,8 +28,32 @@ ArmmsRpi::ArmmsRpi()
   motor_power_.reset(new ArmmsMotorPower(nh_));
   ROS_INFO("Create switch limit");
   switch_limit_.reset(new ArmmsSwitchLimit(nh_));
+
+  if (sampling_frequency_ <= 0)
+  {
+    ROS_ERROR("Bad sampling frequency value (%d)", sampling_frequency_);
+    return;
+  }
+
+  ros::Duration update_time = ros::Duration(1.0 / sampling_frequency_);
+  non_realtime_loop_ = nh_.createTimer(update_time, &ArmmsRpi::update_, this);
+
+  ros::spin();
 }
 
+void ArmmsRpi::retrieveParameters_()
+{
+  ROS_DEBUG("retrieveParameters");
+  ros::param::get("~sampling_frequency", sampling_frequency_);
+}
+
+void ArmmsRpi::update_(const ros::TimerEvent&)
+{
+  power_button_led_->update();
+  user_button_->update();
+  motor_power_->update();
+  switch_limit_->update();
+}
 }  // namespace armms_rpi
 
 using namespace armms_rpi;
@@ -29,14 +62,9 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "armms_rpi_node");
 
-  ros::AsyncSpinner spinner(4);
-  spinner.start();
-
   ros::NodeHandle nh;
 
   ArmmsRpi rpi;
-
-  ros::waitForShutdown();
 
   ROS_INFO("shutdown node");
 }

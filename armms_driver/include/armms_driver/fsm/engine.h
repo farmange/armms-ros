@@ -21,8 +21,8 @@
 
 #include "ros/ros.h"
 
-#include "armms_hardware_interface/fsm/state.h"
-#include "armms_hardware_interface/fsm/transition.h"
+#include "armms_driver/fsm/state.h"
+#include "armms_driver/fsm/transition.h"
 
 namespace orthopus_addon
 {

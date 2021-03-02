@@ -11,6 +11,8 @@
 #define ARMMS_RPI_ARMMS_RPI_H
 
 #include <ros/ros.h>
+#include <wiringPi.h>
+#include <softPwm.h>
 
 #include "armms_rpi/armms_switch_limit.h"
 #include "armms_rpi/armms_power_button_led.h"
@@ -30,6 +32,13 @@ private:
   boost::shared_ptr<ArmmsUserButton> user_button_;
   boost::shared_ptr<ArmmsMotorPower> motor_power_;
   boost::shared_ptr<ArmmsSwitchLimit> switch_limit_;
+
+  int sampling_frequency_;
+  ros::Timer non_realtime_loop_;
+
+  void retrieveParameters_();
+  void update_(const ros::TimerEvent&);
+
 };
 
 }  // namespace armms_rpi

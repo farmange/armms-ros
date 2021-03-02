@@ -5,5 +5,18 @@
   <joint name="joint1" type="continuous">
     <parent link="link1"/>
     <child link="link2"/>
+    <!-- Joint limits -->
+    <limit lower="200.0"
+          upper="260.0"
+          effort="1.0"
+          velocity="30.0" />
+
+    <!-- Soft limits -->
+    <safety_controller k_position="100"
+                      k_velocity="10"
+                      soft_lower_limit="205"
+                      soft_upper_limit="255" />
   </joint>
+
+
 </robot>

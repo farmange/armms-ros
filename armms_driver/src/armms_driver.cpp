@@ -35,13 +35,8 @@
 #include <string>
 #include <thread>
 
-// #include "niryo_one_driver/niryo_one_hardware_interface.h"
-// #include "niryo_one_driver/communication_base.h"
-// #include "niryo_one_driver/niryo_one_communication.h"
-// #include "niryo_one_driver/fake_communication.h"
-// #include "niryo_one_driver/ros_interface.h"
-#include "armms_hardware_interface/armms_api.h"
-#include "armms_hardware_interface/armms_hardware_interface.h"
+#include "armms_driver/armms_api.h"
+#include "armms_driver/armms_hardware_interface.h"
 
 #include "std_msgs/Empty.h"
 
@@ -62,9 +57,6 @@ private:
 
   bool flag_reset_controllers;
 
-  // ros::Subscriber reset_controller_subscriber; // workaround to compensate missed steps
-  // ros::Subscriber trajectory_result_subscriber;
-
 public:
   void rosControlLoop()
   {
@@ -77,31 +69,35 @@ public:
 
     while (ros::ok())
     {
-      ROS_DEBUG_NAMED("ArmmsDriver", "Read...");
+      ROS_DEBUG_NAMED("ArmmsDriver", "----------------Start Loop------------------");
+
+      if (robot->getStatus() != ArmmsHardwareInterface::OK)
+      {
+        flag_reset_controllers = true;
+      }
 
       robot->read();
-      if (robot->getStatus() == ArmmsHardwareInterface::OK)
+
+      current_time = ros::Time::now();
+      elapsed_time = ros::Duration(current_time - last_time);
+      last_time = current_time;
+
+      if (flag_reset_controllers)
       {
-        ROS_DEBUG_NAMED("ArmmsDriver", "Read OK");
-
-        current_time = ros::Time::now();
-        elapsed_time = ros::Duration(current_time - last_time);
-        last_time = current_time;
-
-        if (flag_reset_controllers)
-        {
-          // robot->setCommandToCurrentPosition();
-          cm->update(ros::Time::now(), elapsed_time, true);
-          flag_reset_controllers = false;
-        }
-        else
-        {
-          cm->update(ros::Time::now(), elapsed_time, false);
-        }
-        robot->enforceLimit(elapsed_time);
-
-        robot->write();
+        ROS_DEBUG_NAMED("ArmmsDriver", "Reset controller...");
+        robot->setCommandToCurrentPosition();
+        robot->resetLimit();
+        cm->update(ros::Time::now(), elapsed_time, true);
+        flag_reset_controllers = false;
       }
+      else
+      {
+        cm->update(ros::Time::now(), elapsed_time, false);
+        robot->enforceLimit(elapsed_time);
+      }
+
+      robot->write();
+
       ros_control_loop_rate->sleep();
     }
   }
@@ -114,10 +110,6 @@ public:
     ros::param::get("~ros_control_loop_frequency", ros_control_frequency);
     ros::param::get("~api_logging", api_logging);
     ros::param::get("~device", device);
-
-    // nh_.getParam("~ros_control_loop_frequency", ros_control_frequency);
-    // nh_.getParam("api_logging", api_logging);
-    // nh_.getParam("device", device);
 
     ROS_INFO("Starting ARMMS driver thread (frequency : %lf)", ros_control_frequency);
 
