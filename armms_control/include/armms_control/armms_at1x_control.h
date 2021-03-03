@@ -15,6 +15,8 @@
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/Float64.h"
+#include "std_srvs/SetBool.h"
+#include "std_srvs/Empty.h"
 #include "armms_msgs/SetLedColor.h"
 #include "armms_msgs/SetMotorPower.h"
 #include "armms_msgs/ButtonEvent.h"
@@ -36,6 +38,13 @@ private:
   ros::ServiceClient set_led_color_srv_;
   ros::ServiceClient set_motor_power_srv_;
   ros::ServiceServer pwr_btn_ev_service_;
+
+  ros::ServiceServer set_upper_limit_service_;
+  ros::ServiceServer set_lower_limit_service_;
+  ros::ServiceServer reset_upper_limit_service_;
+  ros::ServiceServer reset_lower_limit_service_;
+  ros::ServiceServer enable_upper_limit_service_;
+  ros::ServiceServer enable_lower_limit_service_;
 
   ros::Publisher position_command_pub_;
   ros::Publisher upper_limit_pub_;
@@ -60,6 +69,7 @@ private:
   double speed_setpoint_;
   double joint_position_;
   ros::Time joint_position_time_;
+
   bool user_btn_down_;
   bool user_btn_up_;
   bool switch_limit_;
@@ -126,12 +136,22 @@ private:
   void callbackMotorPower_(const std_msgs::BoolPtr& msg);
   bool callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request& req, armms_msgs::ButtonEvent::Response& res);
 
+  bool callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackSetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackResetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackResetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool callbackEnableUpperLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
+  bool callbackEnableLowerLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res);
+
   void init_();
   status_t startMotor_();
   status_t stopMotor_();
   status_t setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed);
   void handleLimits_(double& cmd);
   void adaptVelocityNearLimits_(double& cmd, const float divisor);
+  void updateJointStates_(std_msgs::Float64& joint_limit, const float joint_value);
+  void setUpperLimit_(const float upper_limit_value);
+  void setLowerLimit_(const float lower_limit_value);
 };
 
 }  // namespace armms_control

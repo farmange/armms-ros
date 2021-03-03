@@ -71,6 +71,17 @@ void ArmmsAT1XControl::initializeServices_()
 
   pwr_btn_ev_service_ =
       nh_.advertiseService("/armms_rpi/power_button_event", &ArmmsAT1XControl::callbackPowerButtonEvent_, this);
+
+  set_upper_limit_service_ = nh_.advertiseService("/set_upper_limit", &ArmmsAT1XControl::callbackSetUpperLimit_, this);
+  set_lower_limit_service_ = nh_.advertiseService("/set_lower_limit", &ArmmsAT1XControl::callbackSetLowerLimit_, this);
+  reset_upper_limit_service_ =
+      nh_.advertiseService("/reset_upper_limit", &ArmmsAT1XControl::callbackResetUpperLimit_, this);
+  reset_lower_limit_service_ =
+      nh_.advertiseService("/reset_lower_limit", &ArmmsAT1XControl::callbackResetLowerLimit_, this);
+  enable_upper_limit_service_ =
+      nh_.advertiseService("/enable_upper_limit", &ArmmsAT1XControl::callbackEnableUpperLimit_, this);
+  enable_lower_limit_service_ =
+      nh_.advertiseService("/enable_lower_limit", &ArmmsAT1XControl::callbackEnableLowerLimit_, this);
 }
 
 void ArmmsAT1XControl::initializeSubscribers_()
@@ -209,16 +220,20 @@ void ArmmsAT1XControl::positionControlUpdate_()
   ROS_WARN_NAMED("ArmmsAT1XControl", "positionControlUpdate_");
 
   double input_velocity_cmd;
+
   ros::Duration test = ros::Duration(ros::Time::now() - joint_position_time_);
   ROS_WARN_STREAM_NAMED("ArmmsAT1XControl", "test : " << test);
 
   if (test > ros::Duration(0.1))
   {
     refresh_joint_state_ = true;
+    return;
   }
   // /* Ensure joint_angle_ is up to date and refresh local copy (cmd_) */
   if (refresh_joint_state_)
   {
+    ROS_ERROR_NAMED("ArmmsAT1XControl", "refresh the joint position %f = %f : ", cmd_.data, joint_position_);
+
     cmd_.data = joint_position_;
     refresh_joint_state_ = false;
     return;
@@ -245,6 +260,9 @@ void ArmmsAT1XControl::positionControlUpdate_()
     input_velocity_cmd = 0.0;
     ROS_INFO_NAMED("ArmmsAT1XControl", "no velocity command received !");
   }
+
+  ROS_INFO_NAMED("ArmmsAT1XControl", "before adapt vel input_velocity_cmd : %f (factor : %f)", input_velocity_cmd,
+                 reduced_speed_divisor_);
 
   adaptVelocityNearLimits_(input_velocity_cmd, reduced_speed_divisor_);
 
@@ -494,6 +512,68 @@ void ArmmsAT1XControl::adaptVelocityNearLimits_(double& cmd, const float divisor
       cmd *= ((joint_position_ - lower_limit_.data) / (2.0 * abs(cmd) / divisor));
     }
   }
+}
+
+void ArmmsAT1XControl::updateJointStates_(std_msgs::Float64& joint_limit, const float joint_value)
+{
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "Update joint1 angles with value : %f", joint_value);
+  joint_limit.data = joint_value;
+}
+
+void ArmmsAT1XControl::setUpperLimit_(const float upper_limit_value)
+{
+  updateJointStates_(upper_limit_, upper_limit_value);
+}
+
+void ArmmsAT1XControl::setLowerLimit_(const float lower_limit_value)
+{
+  updateJointStates_(lower_limit_, lower_limit_value);
+}
+
+bool ArmmsAT1XControl::callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackSetUpperLimit_");
+  setUpperLimit_(joint_position_);
+  return true;
+}
+
+bool ArmmsAT1XControl::callbackSetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackSetLowerLimit_");
+  setLowerLimit_(joint_position_);
+  return true;
+}
+
+bool ArmmsAT1XControl::callbackResetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackResetUpperLimit_");
+  setUpperLimit_(NAN);
+  return true;
+}
+
+bool ArmmsAT1XControl::callbackResetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackResetLowerLimit_");
+  setLowerLimit_(NAN);
+  return true;
+}
+
+bool ArmmsAT1XControl::callbackEnableUpperLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackEnableUpperLimit_");
+  enable_upper_limit = req.data;
+  res.success = true;
+  res.message = "Upper limit correctly enabled";
+  return true;
+}
+
+bool ArmmsAT1XControl::callbackEnableLowerLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
+{
+  ROS_INFO_NAMED("ArmmsAT1XControl", "callbackEnableLowerLimit_");
+  enable_lower_limit = req.data;
+  res.success = true;
+  res.message = "Lower limit correctly enabled";
+  return true;
 }
 
 }  // namespace armms_control
