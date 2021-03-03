@@ -28,6 +28,8 @@ ArmmsRpi::ArmmsRpi()
   motor_power_.reset(new ArmmsMotorPower(nh_));
   ROS_INFO("Create switch limit");
   switch_limit_.reset(new ArmmsSwitchLimit(nh_));
+  ROS_INFO("Create shutdown manager");
+  shutdown_manager_.reset(new ArmmsShutdownManager(nh_));
 
   if (sampling_frequency_ <= 0)
   {

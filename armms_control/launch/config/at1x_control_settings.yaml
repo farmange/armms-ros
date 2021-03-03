@@ -2,3 +2,4 @@
 #  ### Params of the AT1X controller ###
 #
 sampling_frequency          : 100     # Hz
+default_velocity            : 10.0

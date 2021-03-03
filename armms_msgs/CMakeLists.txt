@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   ButtonEvent.srv
+  SetInt.srv
   SetLedColor.srv
   SetMotorPower.srv
 )

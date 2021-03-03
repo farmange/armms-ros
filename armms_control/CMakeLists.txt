@@ -33,7 +33,9 @@ include_directories(
 
 # ARMMS driver node
 add_executable(armms_at1x_control
+  src/armms_user_input.cpp
   src/armms_at1x_control.cpp
+  src/armms_limits.cpp
 )
 target_link_libraries(armms_at1x_control ${catkin_LIBRARIES})
 

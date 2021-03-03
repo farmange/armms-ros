@@ -18,6 +18,7 @@
 #include "armms_rpi/armms_power_button_led.h"
 #include "armms_rpi/armms_user_button.h"
 #include "armms_rpi/armms_motor_power.h"
+#include "armms_rpi/armms_shutdown_manager.h"
 
 namespace armms_rpi
 {
@@ -32,13 +33,13 @@ private:
   boost::shared_ptr<ArmmsUserButton> user_button_;
   boost::shared_ptr<ArmmsMotorPower> motor_power_;
   boost::shared_ptr<ArmmsSwitchLimit> switch_limit_;
+  boost::shared_ptr<ArmmsShutdownManager> shutdown_manager_;
 
   int sampling_frequency_;
   ros::Timer non_realtime_loop_;
 
   void retrieveParameters_();
   void update_(const ros::TimerEvent&);
-
 };
 
 }  // namespace armms_rpi

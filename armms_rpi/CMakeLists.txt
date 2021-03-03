@@ -35,6 +35,7 @@ add_executable(${PROJECT_NAME}
   src/armms_power_button_led.cpp
   src/armms_user_button.cpp
   src/armms_motor_power.cpp
+  src/armms_shutdown_manager.cpp
 )
 
 #
