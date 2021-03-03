@@ -147,7 +147,8 @@ private:
   status_t startMotor_();
   status_t stopMotor_();
   status_t setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed);
-  void handleLimits_(double& cmd);
+  void saturatePosition_(double& cmd);
+  double processInputCommand_();
   void adaptVelocityNearLimits_(double& cmd, const float divisor);
   void updateJointStates_(std_msgs::Float64& joint_limit, const float joint_value);
   void setUpperLimit_(const float upper_limit_value);

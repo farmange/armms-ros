@@ -219,47 +219,25 @@ void ArmmsAT1XControl::positionControlUpdate_()
 {
   ROS_WARN_NAMED("ArmmsAT1XControl", "positionControlUpdate_");
 
-  double input_velocity_cmd;
-
-  ros::Duration test = ros::Duration(ros::Time::now() - joint_position_time_);
-  ROS_WARN_STREAM_NAMED("ArmmsAT1XControl", "test : " << test);
-
-  if (test > ros::Duration(0.1))
+  /* If no fresh position was received since 100ms, stop publishing new commands */
+  ros::Duration position_dt = ros::Duration(ros::Time::now() - joint_position_time_);
+  if (position_dt > ros::Duration(0.1))
   {
     refresh_joint_state_ = true;
+    ROS_WARN_NAMED("ArmmsAT1XControl", "No fresh position received :stall position control");
     return;
   }
-  // /* Ensure joint_angle_ is up to date and refresh local copy (cmd_) */
+
+  /* Ensure joint_position_ is up to date and refresh local copy (cmd_) */
   if (refresh_joint_state_)
   {
-    ROS_ERROR_NAMED("ArmmsAT1XControl", "refresh the joint position %f = %f : ", cmd_.data, joint_position_);
-
+    ROS_INFO_NAMED("ArmmsAT1XControl", "refresh the joint position %f = %f : ", cmd_.data, joint_position_);
     cmd_.data = joint_position_;
     refresh_joint_state_ = false;
     return;
   }
 
-  if (user_btn_up_ && user_btn_down_)
-  {
-    /* do nothing */
-    input_velocity_cmd = 0.0;
-    ROS_INFO_NAMED("ArmmsAT1XControl", "Conflicting up and down button pressed at the same time !");
-  }
-  else if (user_btn_up_)
-  {
-    input_velocity_cmd = +joint_max_speed_;
-    ROS_INFO_NAMED("ArmmsAT1XControl", "velocity command received from up button : %f", input_velocity_cmd);
-  }
-  else if (user_btn_down_)
-  {
-    input_velocity_cmd = -joint_max_speed_;
-    ROS_INFO_NAMED("ArmmsAT1XControl", "velocity command received from down button : %f", input_velocity_cmd);
-  }
-  else
-  {
-    input_velocity_cmd = 0.0;
-    ROS_INFO_NAMED("ArmmsAT1XControl", "no velocity command received !");
-  }
+  double input_velocity_cmd = processInputCommand_();
 
   ROS_INFO_NAMED("ArmmsAT1XControl", "before adapt vel input_velocity_cmd : %f (factor : %f)", input_velocity_cmd,
                  reduced_speed_divisor_);
@@ -270,7 +248,7 @@ void ArmmsAT1XControl::positionControlUpdate_()
 
   /* Speed integration to retrieve position command */
   cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
-  handleLimits_(cmd_.data);
+  saturatePosition_(cmd_.data);
 
   ROS_INFO_NAMED("ArmmsAT1XControl", "output position command : %f", cmd_.data);
 
@@ -459,7 +437,7 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, 
   return OK;
 }
 
-void ArmmsAT1XControl::handleLimits_(double& cmd)
+void ArmmsAT1XControl::saturatePosition_(double& cmd)
 {
   if (cmd > upper_limit_.data)
   {
@@ -469,6 +447,33 @@ void ArmmsAT1XControl::handleLimits_(double& cmd)
   {
     cmd = lower_limit_.data;
   }
+}
+
+double ArmmsAT1XControl::processInputCommand_()
+{
+  double input_command;
+  if (user_btn_up_ && user_btn_down_)
+  {
+    /* do nothing */
+    input_command = 0.0;
+    ROS_INFO_NAMED("ArmmsAT1XControl", "Conflicting up and down button pressed at the same time !");
+  }
+  else if (user_btn_up_)
+  {
+    input_command = +joint_max_speed_;
+    ROS_INFO_NAMED("ArmmsAT1XControl", "velocity command received from up button : %f", input_command);
+  }
+  else if (user_btn_down_)
+  {
+    input_command = -joint_max_speed_;
+    ROS_INFO_NAMED("ArmmsAT1XControl", "velocity command received from down button : %f", input_command);
+  }
+  else
+  {
+    input_command = 0.0;
+    ROS_INFO_NAMED("ArmmsAT1XControl", "no velocity command received !");
+  }
+  return input_command;
 }
 
 void ArmmsAT1XControl::adaptVelocityNearLimits_(double& cmd, const float divisor)
