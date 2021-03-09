@@ -1,8 +1,8 @@
 <launch>
 
-  <arg name="use_urdf" default="true"/>
-  <arg name="armms_robotType" default="at1x" />
-  <arg name="armms_robotName" default="$(arg armms_robotType)"/>
+  <!-- <arg name="use_urdf" default="true"/> -->
+  <!-- <arg name="armms_robotType" default="at1x" /> -->
+  <!-- <arg name="armms_robotName" default="$(arg armms_robotType)"/> -->
 
 <!--
   <group if="$(arg use_urdf)">
@@ -19,4 +19,11 @@
       <rosparam file="$(find armms_control)/launch/config/at1x_control_settings.yaml" /> 
   </node>
   
+  <node name="armms_recorder" pkg="remote_rosbag_record" type="record" ns="armms_recorder">
+      <rosparam file="$(find armms_bringup)/launch/config/recorded_topics.yaml"/>
+      <param name="prefix" value="robot"/>
+      <param name="append_date" value="true"/>
+      <param name="compression" value="bz2"/>
+    </node>
+
 </launch>

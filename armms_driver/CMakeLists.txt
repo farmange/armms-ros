@@ -31,9 +31,11 @@ include_directories(
 
 # ARMMS driver node
 add_executable(armms_driver
+src/nodes/armms_driver_node.cpp
 src/armms_driver.cpp
 src/armms_api.cpp
 src/armms_hardware_interface.cpp
+src/armms_bag_recorder.cpp
 )
 # target_link_libraries(armms_driver ${catkin_LIBRARIES} ${Boost_LIBRARIES} armms_libkinova kinovadrv)
 target_link_libraries(armms_driver ${catkin_LIBRARIES} ${Boost_LIBRARIES} kinovadrv)

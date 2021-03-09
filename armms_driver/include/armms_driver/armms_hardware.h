@@ -12,7 +12,7 @@
 #include <boost/scoped_ptr.hpp>
 #include <ros/ros.h>
 
-namespace armms_hardware_interface
+namespace armms_driver
 {
 /// \brief Hardware interface for a robot
 class ArmmsHardware : public hardware_interface::RobotHW

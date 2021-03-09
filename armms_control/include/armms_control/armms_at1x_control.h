@@ -17,6 +17,7 @@
 #include "std_msgs/Float64.h"
 #include "std_srvs/SetBool.h"
 #include "std_srvs/Empty.h"
+#include "armms_msgs/SetInt.h"
 #include "armms_msgs/SetLedColor.h"
 #include "armms_msgs/SetMotorPower.h"
 #include "armms_msgs/ButtonEvent.h"
@@ -40,7 +41,7 @@ private:
   ros::NodeHandle nh_;
   ros::ServiceClient set_led_color_srv_;
   ros::ServiceClient set_motor_power_srv_;
-  ros::ServiceServer pwr_btn_ev_service_;
+  ros::ServiceClient shutdown_srv_;
 
   ros::Publisher position_command_pub_;
 
@@ -123,6 +124,7 @@ private:
   status_t startMotor_();
   status_t stopMotor_();
   status_t setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed);
+  status_t shutdown_();
 };
 
 }  // namespace armms_control

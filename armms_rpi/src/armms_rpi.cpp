@@ -6,7 +6,13 @@
 //============================================================================
 
 #include "armms_rpi/armms_rpi.h"
+#include <signal.h>
 
+#include <ros/callback_queue.h>
+#include <ros/callback_queue.h>
+#include <ros/spinner.h>
+// // Signal-safe flag for whether shutdown is requested
+sig_atomic_t volatile g_request_shutdown = 0;
 namespace armms_rpi
 {
 ArmmsRpi::ArmmsRpi()

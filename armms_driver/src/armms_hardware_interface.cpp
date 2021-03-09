@@ -8,7 +8,7 @@ using joint_limits_interface::PositionJointSoftLimitsHandle;
 using joint_limits_interface::PositionJointSoftLimitsInterface;
 using joint_limits_interface::SoftJointLimits;
 
-namespace armms_hardware_interface
+namespace armms_driver
 {
 ArmmsHardwareInterface::ArmmsHardwareInterface(armms::ArmmsAPI* comm) : comm_(comm)
 {
@@ -150,4 +150,4 @@ ArmmsHardwareInterface::status_t ArmmsHardwareInterface::getStatus()
   // return status_;
 }
 
-}  // namespace armms_hardware_interface
+}  // namespace armms_driver

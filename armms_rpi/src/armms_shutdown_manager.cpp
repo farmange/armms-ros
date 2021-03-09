@@ -13,14 +13,27 @@ ArmmsShutdownManager::ArmmsShutdownManager(const ros::NodeHandle& nh) : nh_(nh)
 {
   retrieveParameters_();
   initializeServices_();
-
   ROS_INFO("Starting ros control thread...");
 }
 
 void ArmmsShutdownManager::shutdownThread_()
 {
   ROS_DEBUG_NAMED("ArmmsShutdownManager", "shutdownThread_");
-  system("sudo shutdown now");
+  std::system("killall -9 rosmaster");
+  /* The following command requires that execution access was grant to the user
+   * (with systemd only primary group is defined at startup).
+   */
+  std::system("sudo /sbin/shutdown -h now");
+}
+
+void ArmmsShutdownManager::rebootThread_()
+{
+  ROS_DEBUG_NAMED("ArmmsShutdownManager", "rebootThread_");
+  std::system("killall -9 rosmaster");
+  /* The following command requires that execution access was grant to the user
+   * (with systemd only primary group is defined at startup).
+   */
+  std::system("sudo reboot");
 }
 
 void ArmmsShutdownManager::retrieveParameters_()
@@ -53,6 +66,7 @@ bool ArmmsShutdownManager::callbackShutdown_(armms_msgs::SetInt::Request& req, a
     // {
     //   'status' : 200, 'message' : 'Robot is rebooting'
     // }
+    shutdown_thread_.reset(new std::thread(boost::bind(&ArmmsShutdownManager::rebootThread_, this)));
   }
   else
   {

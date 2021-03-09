@@ -46,6 +46,7 @@ ArmmsAT1XControl::ArmmsAT1XControl() : limit_handler(joint_position_)
 
     loop_rate.sleep();
   }
+  ROS_INFO_NAMED("ArmmsAT1XControl", "Shutdown node");
 }
 
 void ArmmsAT1XControl::initializeServices_()
@@ -56,6 +57,7 @@ void ArmmsAT1XControl::initializeServices_()
   ros::service::waitForService("/armms_rpi/set_motor_power");
   set_led_color_srv_ = nh_.serviceClient<armms_msgs::SetLedColor>("/armms_rpi/set_rgb_led");
   set_motor_power_srv_ = nh_.serviceClient<armms_msgs::SetMotorPower>("/armms_rpi/set_motor_power");
+  shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
 }
 
 void ArmmsAT1XControl::initializeSubscribers_()
@@ -159,7 +161,7 @@ void ArmmsAT1XControl::initializeStateMachine_()
 void ArmmsAT1XControl::uninitializedEnter_()
 {
   ROS_WARN_NAMED("ArmmsAT1XControl", "uninitializedEnter_");
-  setLedColor_(255, 0, 0, 1);  // red fast blink
+  setLedColor_(255, 0, 0, 10);  // red blink
 }
 
 void ArmmsAT1XControl::stoppedEnter_()
@@ -169,8 +171,7 @@ void ArmmsAT1XControl::stoppedEnter_()
   {
     status_ = ERROR;
   }
-  // TODO clarify stop motor before
-  setLedColor_(255, 0, 0, 0);  // red
+  setLedColor_(0, 255, 0, 50);  // green + blink
 }
 
 void ArmmsAT1XControl::positionControlEnter_()
@@ -245,13 +246,14 @@ void ArmmsAT1XControl::errorProcessingUpdate_()
 void ArmmsAT1XControl::finalizedEnter_()
 {
   ROS_WARN_NAMED("ArmmsAT1XControl", "finalizedEnter_");
-  setLedColor_(0, 0, 0, 0);  // power off led
+  setLedColor_(255, 0, 0, 0);  // red
+  shutdown_();
 }
 
 void ArmmsAT1XControl::finalizedUpdate_()
 {
   ROS_WARN_NAMED("ArmmsAT1XControl", "finalizedUpdate_");
-  ros::shutdown();
+  // ros::shutdown();
 }
 
 /******** FSM Transition definition ********/
@@ -359,6 +361,21 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, 
   return OK;
 }
 
+ArmmsAT1XControl::status_t ArmmsAT1XControl::shutdown_()
+{
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "shutdown_");
+
+  armms_msgs::SetInt msgShutdown;
+  msgShutdown.request.value = 1;  // shutdown
+
+  if (!shutdown_srv_.call(msgShutdown))
+  {
+    ROS_ERROR_NAMED("ArmmsAT1XControl", "Problem when calling shutdown service");
+    return ERROR;
+  }
+  return OK;
+}
+
 }  // namespace armms_control
 
 using namespace armms_control;
@@ -370,6 +387,4 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
 
   ArmmsAT1XControl at1x;
-
-  ROS_INFO("shutdown node");
 }

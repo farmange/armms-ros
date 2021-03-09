@@ -22,7 +22,9 @@ class ArmmsPowerButtonLed
 {
 public:
   ArmmsPowerButtonLed(const ros::NodeHandle& nh);
+  ~ArmmsPowerButtonLed();
   void update();
+  void setLedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed);
 
 private:
   ros::NodeHandle nh_;

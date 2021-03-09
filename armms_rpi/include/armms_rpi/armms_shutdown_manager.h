@@ -32,6 +32,7 @@ private:
   void retrieveParameters_();
   void initializeServices_();
   void shutdownThread_();
+  void rebootThread_();
 
   bool callbackShutdown_(armms_msgs::SetInt::Request& req, armms_msgs::SetInt::Response& res);
 };

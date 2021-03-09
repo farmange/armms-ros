@@ -17,9 +17,9 @@ ArmmsPowerButtonLed::ArmmsPowerButtonLed(const ros::NodeHandle& nh) : nh_(nh)
   led_blink_speed_ = 0;
   led_blink_counter_ = 0;
   led_blink_state_ = true;
-  red_led_state_ = 0;
-  green_led_state_ = 0;
-  blue_led_state_ = 0;
+
+  /* Led is initialized in red color */
+  setLedColor(255, 0, 0, 0);
 
   pinMode(power_btn_pin_, INPUT);
   pinMode(red_led_pin_, OUTPUT);
@@ -27,23 +27,34 @@ ArmmsPowerButtonLed::ArmmsPowerButtonLed(const ros::NodeHandle& nh) : nh_(nh)
   pinMode(blue_led_pin_, OUTPUT);
   pullUpDnControl(power_btn_pin_, PUD_OFF);
 
-  if (softPwmCreate(red_led_pin_, 0, 100) != 0)
+  if (softPwmCreate(red_led_pin_, red_led_state_, 100) != 0)
   {
     ROS_ERROR_NAMED("ArmmsPowerButtonLed", "red_led_pin_ softPwmCreate error !");
     return;
   }
 
-  if (softPwmCreate(green_led_pin_, 0, 100) != 0)
+  if (softPwmCreate(green_led_pin_, green_led_state_, 100) != 0)
   {
     ROS_ERROR_NAMED("ArmmsPowerButtonLed", "green_led_pin_ softPwmCreate error !");
     return;
   }
 
-  if (softPwmCreate(blue_led_pin_, 0, 100) != 0)
+  if (softPwmCreate(blue_led_pin_, blue_led_state_, 100) != 0)
   {
     ROS_ERROR_NAMED("ArmmsPowerButtonLed", "blue_led_pin_ softPwmCreate error !");
     return;
   }
+}
+
+ArmmsPowerButtonLed::~ArmmsPowerButtonLed()
+{
+  /* Stop PWM and setup led to red */
+  softPwmStop(red_led_pin_);
+  softPwmStop(green_led_pin_);
+  softPwmStop(blue_led_pin_);
+  digitalWrite(red_led_pin_, 0);
+  digitalWrite(green_led_pin_, 1);
+  digitalWrite(blue_led_pin_, 1);
 }
 
 void ArmmsPowerButtonLed::update()
@@ -52,9 +63,20 @@ void ArmmsPowerButtonLed::update()
   processPowerButtonInput_();
 }
 
+void ArmmsPowerButtonLed::setLedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed)
+{
+  led_blink_speed_ = blink_speed;
+  /* Warning : due to high side led wiring, output states are inverted
+   * so that 0 mean 100% while 100 mean 0% .*/
+  red_led_state_ = 100 - scaleColorPwm_(r);
+  green_led_state_ = 100 - scaleColorPwm_(g);
+  blue_led_state_ = 100 - scaleColorPwm_(b);
+}
+
 void ArmmsPowerButtonLed::updateLed_()
 {
   ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "updateLed");
+
   if (led_blink_speed_ == 0)
   {
     led_blink_state_ = true;
@@ -156,16 +178,13 @@ bool ArmmsPowerButtonLed::callbackSetRGBLed_(armms_msgs::SetLedColor::Request& r
                                              armms_msgs::SetLedColor::Response& res)
 {
   ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "callbackSetRGBLed_");
-  led_blink_speed_ = req.blink_speed;
-  red_led_state_ = 100 - scaleColorPwm_(req.r);
-  green_led_state_ = 100 - scaleColorPwm_(req.g);
-  blue_led_state_ = 100 - scaleColorPwm_(req.b);
+  setLedColor(req.r, req.g, req.b, req.blink_speed);
   return true;
 }
 
 int ArmmsPowerButtonLed::scaleColorPwm_(uint8_t color)
 {
-  int result = (color * 100) / 255;
+  int result = ((int)color * 100) / 255;
   if (result > 100)
   {
     result = 100;

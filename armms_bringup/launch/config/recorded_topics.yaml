@@ -1,0 +1,12 @@
+topics:
+- /armms_control/velocity_setpoint
+- /armms_rpi/motor_power
+- /armms_rpi/switch_limit
+- /armms_rpi/user_button_down
+- /armms_rpi/user_button_up
+- /at1x/controller/position/joint1/command
+- /joint_states
+- /lower_limit
+# - /rosout
+# - /rosout_agg
+- /upper_limit

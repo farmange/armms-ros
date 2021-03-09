@@ -1,5 +1,5 @@
-#ifndef ROS_CONTROL__ARMMS_HARDWARE_INTERFACE_H
-#define ROS_CONTROL__ARMMS_HARDWARE_INTERFACE_H
+#ifndef ARMMS_DRIVER_ARMMS_HARDWARE_INTERFACE_H
+#define ARMMS_DRIVER_ARMMS_HARDWARE_INTERFACE_H
 
 #include <hardware_interface/joint_state_interface.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -25,12 +25,9 @@ using joint_limits_interface::PositionJointSoftLimitsHandle;
 using joint_limits_interface::PositionJointSoftLimitsInterface;
 using joint_limits_interface::SoftJointLimits;
 
-namespace armms_hardware_interface
+namespace armms_driver
 {
-static const double POSITION_STEP_FACTOR = 10;
-static const double VELOCITY_STEP_FACTOR = 10;
-
-class ArmmsHardwareInterface : public armms_hardware_interface::ArmmsHardware
+class ArmmsHardwareInterface : public armms_driver::ArmmsHardware
 {
 public:
   typedef enum status_e
