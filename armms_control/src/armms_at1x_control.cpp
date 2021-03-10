@@ -36,25 +36,22 @@ ArmmsAT1XControl::ArmmsAT1XControl() : limit_handler(joint_position_)
   {
     ros::spinOnce();
     user_input_handler.processUserInput();
-    /**** FSM ****/
     ROS_DEBUG_NAMED("ArmmsAT1XControl", "Current state is '%s' and input event is '%s'",
                     engine_->getCurrentState()->getName().c_str(),
                     user_input_handler.getUserInput().toString().c_str());
     engine_->process();
-    /*************/
     user_input_handler.clearUserInput();
 
     loop_rate.sleep();
   }
-  ROS_INFO_NAMED("ArmmsAT1XControl", "Shutdown node");
+  ROS_INFO_NAMED("ArmmsAT1XControl", "Shutdown...");
 }
 
 void ArmmsAT1XControl::initializeServices_()
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "initializeServices_");
-
   ros::service::waitForService("/armms_rpi/set_rgb_led");
   ros::service::waitForService("/armms_rpi/set_motor_power");
+  ros::service::waitForService("/armms_rpi/shutdown_rpi");
   set_led_color_srv_ = nh_.serviceClient<armms_msgs::SetLedColor>("/armms_rpi/set_rgb_led");
   set_motor_power_srv_ = nh_.serviceClient<armms_msgs::SetMotorPower>("/armms_rpi/set_motor_power");
   shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
@@ -62,11 +59,8 @@ void ArmmsAT1XControl::initializeServices_()
 
 void ArmmsAT1XControl::initializeSubscribers_()
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "initializeSubscribers_");
-  ROS_DEBUG("initializeSubscribers_");
   ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/switch_limit");
   ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/motor_power");
-
   joint_state_sub_ = nh_.subscribe("/joint_states", 1, &ArmmsAT1XControl::callbackJointStates_, this);
   switch_limit_sub_ = nh_.subscribe("/armms_rpi/switch_limit", 1, &ArmmsAT1XControl::callbackSwitchLimit_, this);
   motor_power_sub_ = nh_.subscribe("/armms_rpi/motor_power", 1, &ArmmsAT1XControl::callbackMotorPower_, this);
@@ -74,13 +68,11 @@ void ArmmsAT1XControl::initializeSubscribers_()
 
 void ArmmsAT1XControl::initializePublishers_()
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "initializePublishers_");
   position_command_pub_ = nh_.advertise<std_msgs::Float64>("/at1x/controller/position/joint1/command", 1);
 }
 
 void ArmmsAT1XControl::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "retrieveParameters_");
   ros::param::get("~sampling_frequency", sampling_frequency_);
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
 }
@@ -160,13 +152,11 @@ void ArmmsAT1XControl::initializeStateMachine_()
 /****** FSM State function definition ******/
 void ArmmsAT1XControl::uninitializedEnter_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "uninitializedEnter_");
   setLedColor_(255, 0, 0, 10);  // red blink
 }
 
 void ArmmsAT1XControl::stoppedEnter_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "stoppedEnter_");
   if (stopMotor_() != OK)
   {
     status_ = ERROR;
@@ -176,7 +166,6 @@ void ArmmsAT1XControl::stoppedEnter_()
 
 void ArmmsAT1XControl::positionControlEnter_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "positionControlEnter_");
   refresh_joint_state_ = true;
   if (startMotor_() != OK)
   {
@@ -187,8 +176,6 @@ void ArmmsAT1XControl::positionControlEnter_()
 
 void ArmmsAT1XControl::positionControlUpdate_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "positionControlUpdate_");
-
   /* If no fresh position was received since 100ms, stop publishing new commands */
   ros::Duration position_dt = ros::Duration(ros::Time::now() - joint_position_time_);
   if (position_dt > ros::Duration(0.1))
@@ -206,7 +193,7 @@ void ArmmsAT1XControl::positionControlUpdate_()
   /* Ensure joint_position_ is up to date and refresh local copy (cmd_) */
   if (refresh_joint_state_)
   {
-    ROS_INFO_NAMED("ArmmsAT1XControl", "refresh the joint position %f = %f : ", cmd_.data, joint_position_);
+    ROS_INFO_NAMED("ArmmsAT1XControl", "Refresh the joint position %f = %f : ", cmd_.data, joint_position_);
     cmd_.data = joint_position_;
     refresh_joint_state_ = false;
     return;
@@ -214,46 +201,37 @@ void ArmmsAT1XControl::positionControlUpdate_()
 
   double input_velocity_cmd = user_input_handler.getVelocityCommand();
 
-  ROS_INFO_NAMED("ArmmsAT1XControl", "before adapt vel input_velocity_cmd : %f (factor : %f)", input_velocity_cmd,
-                 reduced_speed_divisor_);
-
   limit_handler.adaptVelocityNearLimits(input_velocity_cmd);
 
-  ROS_INFO_NAMED("ArmmsAT1XControl", "input_velocity_cmd : %f", input_velocity_cmd);
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "input_velocity_cmd : %f", input_velocity_cmd);
 
   /* Speed integration to retrieve position command */
   cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
   limit_handler.saturatePosition(cmd_.data);
   limit_handler.publishLimits();
-  ROS_INFO_NAMED("ArmmsAT1XControl", "output position command : %f", cmd_.data);
-
   position_command_pub_.publish(cmd_);
 }
 
 void ArmmsAT1XControl::errorProcessingEnter_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "errorProcessingEnter_");
   setLedColor_(255, 0, 0, 10);  // red + bling 100ms
+  ROS_WARN_NAMED("ArmmsAT1XControl", "Error detected (status_ : %d | switch_limit_ : %d)", status_, switch_limit_);
   status_ = stopMotor_();
 }
 
 void ArmmsAT1XControl::errorProcessingUpdate_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "errorProcessingUpdate_");
-  ROS_WARN_NAMED("ArmmsAT1XControl", "status_ = %d | switch_limit_ = %d", status_, switch_limit_);
 }
 
 void ArmmsAT1XControl::finalizedEnter_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "finalizedEnter_");
+  ROS_WARN_NAMED("ArmmsAT1XControl", "Control state machine enters in FINALIZED state...");
   setLedColor_(255, 0, 0, 0);  // red
   shutdown_();
 }
 
 void ArmmsAT1XControl::finalizedUpdate_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "finalizedUpdate_");
-  // ros::shutdown();
 }
 
 /******** FSM Transition definition ********/
@@ -316,7 +294,6 @@ void ArmmsAT1XControl::callbackMotorPower_(const std_msgs::BoolPtr& msg)
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::startMotor_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "startMotor_");
   armms_msgs::SetMotorPower msgPower;
   msgPower.request.power_state = 1;
   if (!set_motor_power_srv_.call(msgPower))
@@ -330,7 +307,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::startMotor_()
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::stopMotor_()
 {
-  ROS_WARN_NAMED("ArmmsAT1XControl", "stopMotor_");
   armms_msgs::SetMotorPower msgPower;
   msgPower.request.power_state = 0;
   if (!set_motor_power_srv_.call(msgPower))
@@ -344,8 +320,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::stopMotor_()
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed)
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "setLedColor_");
-
   armms_msgs::SetLedColor msgColor;
   msgColor.request.r = r;
   msgColor.request.g = g;
@@ -363,8 +337,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, 
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::shutdown_()
 {
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "shutdown_");
-
   armms_msgs::SetInt msgShutdown;
   msgShutdown.request.value = 1;  // shutdown
 

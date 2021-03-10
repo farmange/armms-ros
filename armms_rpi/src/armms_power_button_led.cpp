@@ -75,8 +75,6 @@ void ArmmsPowerButtonLed::setLedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t b
 
 void ArmmsPowerButtonLed::updateLed_()
 {
-  ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "updateLed");
-
   if (led_blink_speed_ == 0)
   {
     led_blink_state_ = true;
@@ -106,8 +104,6 @@ void ArmmsPowerButtonLed::updateLed_()
 
 void ArmmsPowerButtonLed::processPowerButtonInput_()
 {
-  ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "processPowerButtonInput_");
-
   /* High side commutation */
   power_btn_state_ = digitalRead(power_btn_pin_);
 
@@ -157,7 +153,6 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
 
 void ArmmsPowerButtonLed::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "retrieveParameters");
   ros::param::get("~power_button_pin", power_btn_pin_);
   ros::param::get("~red_led_pin", red_led_pin_);
   ros::param::get("~green_led_pin", green_led_pin_);
@@ -169,7 +164,6 @@ void ArmmsPowerButtonLed::retrieveParameters_()
 
 void ArmmsPowerButtonLed::initializeServices_()
 {
-  ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "initializeServices");
   set_rgb_led_service_ = nh_.advertiseService("/armms_rpi/set_rgb_led", &ArmmsPowerButtonLed::callbackSetRGBLed_, this);
   button_event_srv_ = nh_.serviceClient<armms_msgs::ButtonEvent>("/armms_rpi/power_button_event");
 }
@@ -177,7 +171,6 @@ void ArmmsPowerButtonLed::initializeServices_()
 bool ArmmsPowerButtonLed::callbackSetRGBLed_(armms_msgs::SetLedColor::Request& req,
                                              armms_msgs::SetLedColor::Response& res)
 {
-  ROS_DEBUG_NAMED("ArmmsPowerButtonLed", "callbackSetRGBLed_");
   setLedColor(req.r, req.g, req.b, req.blink_speed);
   return true;
 }

@@ -100,7 +100,6 @@ public:
 
   void registerUpdateFcn(void (T::*fp)(void))
   {
-    ROS_DEBUG("registerUpdateFcn");
     update_ptr_ = fp;
   };
 
@@ -121,5 +120,5 @@ private:
   void (T::*update_ptr_)(void);
   void (T::*exit_ptr_)(void);
 };
-}
+}  // namespace orthopus_addon
 #endif

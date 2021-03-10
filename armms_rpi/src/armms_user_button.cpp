@@ -53,14 +53,12 @@ void ArmmsUserButton::update()
 
 void ArmmsUserButton::initializePublishers_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserButton", "initializePublishers");
   btn_up_pub_ = nh_.advertise<std_msgs::Bool>("/armms_rpi/user_button_up", 1);
   btn_down_pub_ = nh_.advertise<std_msgs::Bool>("/armms_rpi/user_button_down", 1);
 }
 
 void ArmmsUserButton::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserButton", "retrieveParameters");
   ros::param::get("~user_btn_up_pin", btn_up_pin_);
   ros::param::get("~user_btn_down_pin", btn_down_pin_);
 }

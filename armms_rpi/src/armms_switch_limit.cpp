@@ -39,13 +39,11 @@ void ArmmsSwitchLimit::update()
 
 void ArmmsSwitchLimit::initializePublishers_()
 {
-  ROS_DEBUG_NAMED("ArmmsSwitchLimit", "initializePublishers");
   switch_limit_pub_ = nh_.advertise<std_msgs::Bool>("/armms_rpi/switch_limit", 1);
 }
 
 void ArmmsSwitchLimit::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsSwitchLimit", "retrieveParameters");
   ros::param::get("~switch_limit_pin", switch_limit_pin_);
 }
 

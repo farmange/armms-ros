@@ -35,7 +35,7 @@ private:
   boost::shared_ptr<ArmmsSwitchLimit> switch_limit_;
   boost::shared_ptr<ArmmsShutdownManager> shutdown_manager_;
 
-  int sampling_frequency_;
+  int loop_rate_;
   ros::Timer non_realtime_loop_;
 
   void retrieveParameters_();

@@ -1,8 +1,8 @@
 #
 #  ### Params of the ARMMS RPI node ###
 #
-sampling_frequency          : 100     # Hz
-
+rpi_loop_rate               : 100 # Hz
+diag_loop_rate              : 1   # Hz
 # Pin definition using Raspberry Pi numbering
 user_btn_up_pin             : 24
 user_btn_down_pin           : 25

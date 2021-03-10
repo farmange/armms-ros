@@ -30,7 +30,7 @@ class State
 public:
   State(T* obj, std::string name)
   {
-    ROS_DEBUG("Construct state %s", name.c_str());
+    ROS_DEBUG_NAMED("FsmState", "Construct state %s", name.c_str());
     name_ = name;
     obj_ = obj;
     enter_ptr_ = nullptr;
@@ -39,7 +39,7 @@ public:
 
     if (obj_ == nullptr)
     {
-      ROS_ERROR("No state machine obj !");
+      ROS_ERROR_NAMED("FsmState", "No state machine obj !");
       return;
     }
   };
@@ -50,7 +50,7 @@ public:
   {
     if (obj_ == nullptr)
     {
-      ROS_ERROR("No state machine context object !");
+      ROS_ERROR_NAMED("FsmState", "No state machine context object !");
       return;
     }
     if (enter_ptr_ == nullptr)
@@ -58,7 +58,7 @@ public:
       //       ROS_DEBUG("No ENTER function for the state %s !", name_.c_str());
       return;
     }
-    ROS_DEBUG("Run enter function of state '%s'...", name_.c_str());
+    ROS_DEBUG_NAMED("FsmState", "Run enter function of state '%s'...", name_.c_str());
     (obj_->*enter_ptr_)();
   };
 
@@ -66,7 +66,7 @@ public:
   {
     if (obj_ == nullptr)
     {
-      ROS_ERROR("No state machine context object !");
+      ROS_ERROR_NAMED("FsmState", "No state machine context object !");
       return;
     }
     if (update_ptr_ == nullptr)
@@ -74,7 +74,7 @@ public:
       //       ROS_DEBUG("No UPDATE function for the state %s !", name_.c_str());
       return;
     }
-    ROS_DEBUG("Run update function of state '%s'...", name_.c_str());
+    ROS_DEBUG_NAMED("FsmState", "Run update function of state '%s'...", name_.c_str());
     (obj_->*update_ptr_)();
   };
 
@@ -82,7 +82,7 @@ public:
   {
     if (obj_ == nullptr)
     {
-      ROS_ERROR("No state machine context object !");
+      ROS_ERROR_NAMED("FsmState", "No state machine context object !");
       return;
     }
     if (exit_ptr_ == nullptr)
@@ -90,7 +90,7 @@ public:
       //       ROS_DEBUG("No EXIT function for the state %s !", name_.c_str());
       return;
     }
-    ROS_DEBUG("Run exit function of state '%s'...", name_.c_str());
+    ROS_DEBUG_NAMED("FsmState", "Run exit function of state '%s'...", name_.c_str());
     (obj_->*exit_ptr_)();
   };
 
@@ -101,7 +101,6 @@ public:
 
   void registerUpdateFcn(void (T::*fp)(void))
   {
-    ROS_DEBUG("registerUpdateFcn");
     update_ptr_ = fp;
   };
 

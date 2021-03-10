@@ -96,7 +96,7 @@ void ArmmsDriver::rosControlLoop()
 
     if (flag_reset_controllers)
     {
-      ROS_DEBUG_NAMED("ArmmsDriver", "Reset controller...");
+      ROS_DEBUG("Reset controller...");
       robot->setCommandToCurrentPosition();
       robot->resetLimit();
       cm->update(ros::Time::now(), elapsed_time, true);

@@ -17,7 +17,7 @@ namespace armms_rpi
 {
 ArmmsRpi::ArmmsRpi()
 {
-  sampling_frequency_ = 0;
+  loop_rate_ = 0;
   retrieveParameters_();
 
   if (wiringPiSetup() == -1)
@@ -37,13 +37,13 @@ ArmmsRpi::ArmmsRpi()
   ROS_INFO("Create shutdown manager");
   shutdown_manager_.reset(new ArmmsShutdownManager(nh_));
 
-  if (sampling_frequency_ <= 0)
+  if (loop_rate_ <= 0)
   {
-    ROS_ERROR("Bad sampling frequency value (%d)", sampling_frequency_);
+    ROS_ERROR("Bad sampling frequency value (%d)", loop_rate_);
     return;
   }
 
-  ros::Duration update_time = ros::Duration(1.0 / sampling_frequency_);
+  ros::Duration update_time = ros::Duration(1.0 / loop_rate_);
   non_realtime_loop_ = nh_.createTimer(update_time, &ArmmsRpi::update_, this);
 
   ros::spin();
@@ -51,8 +51,7 @@ ArmmsRpi::ArmmsRpi()
 
 void ArmmsRpi::retrieveParameters_()
 {
-  ROS_DEBUG("retrieveParameters");
-  ros::param::get("~sampling_frequency", sampling_frequency_);
+  ros::param::get("~rpi_loop_rate", loop_rate_);
 }
 
 void ArmmsRpi::update_(const ros::TimerEvent&)

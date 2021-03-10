@@ -28,7 +28,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# ARMMS driver node
+# ARMMS rpi node
 add_executable(${PROJECT_NAME}
   src/armms_rpi.cpp
   src/armms_switch_limit.cpp
@@ -62,6 +62,14 @@ endif()
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
+
+# ARMMS rpi diagnostics node
+add_executable(${PROJECT_NAME}_diagnostics
+  src/armms_rpi_diagnostics.cpp
+)
+target_link_libraries(${PROJECT_NAME}_diagnostics  ${catkin_LIBRARIES})
+add_dependencies(${PROJECT_NAME}_diagnostics ${catkin_EXPORTED_TARGETS})
+
 #############
 ## Install ##
 #############

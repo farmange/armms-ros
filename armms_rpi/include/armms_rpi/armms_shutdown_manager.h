@@ -29,11 +29,9 @@ private:
   ros::ServiceServer shutdown_service_;
   boost::shared_ptr<std::thread> shutdown_thread_;
 
-  void retrieveParameters_();
   void initializeServices_();
   void shutdownThread_();
   void rebootThread_();
-
   bool callbackShutdown_(armms_msgs::SetInt::Request& req, armms_msgs::SetInt::Response& res);
 };
 

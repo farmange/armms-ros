@@ -79,7 +79,8 @@ public:
                     transitions_[i]->getFinalState()->getName().c_str());
           if (transitions_[i]->isConditionFulfilled())
           {
-            ROS_ERROR("=> Condition is fulfil ! Go to '%s'", transitions_[i]->getFinalState()->getName().c_str());
+            ROS_INFO_NAMED("FsmEngine", "=> Condition is fulfil ! Go to '%s'",
+                           transitions_[i]->getFinalState()->getName().c_str());
             current_state_->exit();
             current_state_ = transitions_[i]->getFinalState();
             current_state_->enter();

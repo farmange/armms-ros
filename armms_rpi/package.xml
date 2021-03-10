@@ -12,6 +12,7 @@
   <depend>rospy</depend>
   <depend>std_msgs</depend>
   <depend>armms_msgs</depend>
+  <depend>wiringPi</depend>
   <export>
   </export>
 </package>

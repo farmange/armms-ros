@@ -28,8 +28,6 @@ ArmmsUserInput::ArmmsUserInput()
 
 void ArmmsUserInput::initializeServices_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "initializeServices_");
-
   pwr_btn_ev_service_ =
       nh_.advertiseService("/armms_rpi/power_button_event", &ArmmsUserInput::callbackPowerButtonEvent_, this);
   setpoint_service_ =
@@ -38,7 +36,6 @@ void ArmmsUserInput::initializeServices_()
 
 void ArmmsUserInput::initializeSubscribers_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "initializeSubscribers_");
   ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/user_button_down");
   ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/user_button_up");
 
@@ -51,13 +48,11 @@ void ArmmsUserInput::initializeSubscribers_()
 
 void ArmmsUserInput::initializePublishers_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "initializePublishers_");
   setpoint_velocity_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/velocity_setpoint", 1);
 }
 
 void ArmmsUserInput::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "retrieveParameters_");
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_velocity_);
   ros::param::get("~/default_velocity", joint_default_velocity_);
 }
@@ -114,7 +109,6 @@ void ArmmsUserInput::callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg)
 bool ArmmsUserInput::callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request& req,
                                                armms_msgs::ButtonEvent::Response& res)
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "callbackPowerButtonEvent_");
   if (req.button_event == 1)
   {
     /* Short press */
@@ -136,7 +130,6 @@ bool ArmmsUserInput::callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request&
 bool ArmmsUserInput::callbackSetVelocitySetpoint_(armms_msgs::SetVelocitySetpoint::Request& req,
                                                   armms_msgs::SetVelocitySetpoint::Response& res)
 {
-  ROS_DEBUG_NAMED("ArmmsUserInput", "callbackSetVelocitySetpoint_");
   if (req.value < 0)
   {
     ROS_WARN_NAMED("ArmmsUserInput", "Negative velocity setpoint are not allowed (value:%f)", req.value);
@@ -186,38 +179,38 @@ void ArmmsUserInput::processUserInput()
   {
     /* do nothing */
     velocity_command_ = 0.0;
-    ROS_INFO_NAMED("ArmmsUserInput", "Conflicting up and down button pressed at the same time !");
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "Conflicting up and down button pressed at the same time !");
   }
   else if (user_btn_up_)
   {
     velocity_command_ = +joint_setpoint_velocity_;
-    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from up button : %f", velocity_command_);
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from up button : %f", velocity_command_);
   }
   else if (user_btn_down_)
   {
     velocity_command_ = -joint_setpoint_velocity_;
-    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from down button : %f", velocity_command_);
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from down button : %f", velocity_command_);
   }
   else if (webgui_btn_up_ && webgui_btn_down_)
   {
     /* do nothing */
     velocity_command_ = 0.0;
-    ROS_INFO_NAMED("ArmmsUserInput", "Conflicting up and down button pressed at the same time !");
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "Conflicting webgui up and down button pressed at the same time !");
   }
   else if (webgui_btn_up_)
   {
     velocity_command_ = +joint_setpoint_velocity_;
-    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from up button : %f", velocity_command_);
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from webgui up button : %f", velocity_command_);
   }
   else if (webgui_btn_down_)
   {
     velocity_command_ = -joint_setpoint_velocity_;
-    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from down button : %f", velocity_command_);
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from webgui down button : %f", velocity_command_);
   }
   else
   {
     velocity_command_ = 0.0;
-    ROS_INFO_NAMED("ArmmsUserInput", "no velocity command received !");
+    // ROS_DEBUG_NAMED("ArmmsUserInput", "no velocity command received !");
   }
 
   /* publish velocity setpoint */

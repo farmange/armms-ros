@@ -38,7 +38,7 @@ public:
 
     if (obj_ == nullptr)
     {
-      ROS_ERROR("Bad state machine context object !");
+      ROS_ERROR_NAMED("FsmTransition", "Bad state machine context object !");
       return;
     }
   }
@@ -59,12 +59,13 @@ public:
   {
     if (obj_ == nullptr)
     {
-      ROS_ERROR("No state machine context object !");
+      ROS_ERROR_NAMED("FsmTransition", "No state machine context object !");
       return false;
     }
     if (condition_ptr_ == nullptr)
     {
-      ROS_DEBUG("Undefined transition to go to final state '%s' !", final_state_->getName().c_str());
+      ROS_DEBUG_NAMED("FsmTransition", "Undefined transition to go to final state '%s' !",
+                      final_state_->getName().c_str());
       return false;
     }
     return ((obj_->*condition_ptr_)());

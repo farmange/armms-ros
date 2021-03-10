@@ -89,7 +89,6 @@ void ArmmsLimits::publishLimits()
 
 void ArmmsLimits::initializeServices_()
 {
-  ROS_DEBUG_NAMED("ArmmsLimits", "initializeServices_");
   set_upper_limit_service_ =
       nh_.advertiseService("/armms_control/set_upper_limit", &ArmmsLimits::callbackSetUpperLimit_, this);
   set_lower_limit_service_ =
@@ -106,67 +105,57 @@ void ArmmsLimits::initializeServices_()
 
 void ArmmsLimits::initializePublishers_()
 {
-  ROS_DEBUG_NAMED("ArmmsLimits", "initializePublishers_");
   upper_limit_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/upper_limit", 1);
   lower_limit_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/lower_limit", 1);
 }
 
 void ArmmsLimits::retrieveParameters_()
 {
-  ROS_DEBUG_NAMED("ArmmsLimits", "retrieveParameters_");
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
 }
 
 void ArmmsLimits::initializeLimits_()
 {
-  ROS_DEBUG_NAMED("ArmmsLimits", "initializeLimits_");
   upper_limit_.data = NAN;
   lower_limit_.data = NAN;
 }
 
 void ArmmsLimits::setUpperLimit_(const float upper_limit_value)
 {
-  // updateJointStates_(upper_limit_, upper_limit_value);
   upper_limit_.data = joint_position_;
 }
 
 void ArmmsLimits::setLowerLimit_(const float lower_limit_value)
 {
-  // updateJointStates_(lower_limit_, lower_limit_value);
   lower_limit_.data = joint_position_;
 }
 
 bool ArmmsLimits::callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackSetUpperLimit_");
   setUpperLimit_(joint_position_);
   return true;
 }
 
 bool ArmmsLimits::callbackSetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackSetLowerLimit_");
   setLowerLimit_(joint_position_);
   return true;
 }
 
 bool ArmmsLimits::callbackResetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackResetUpperLimit_");
   setUpperLimit_(NAN);
   return true;
 }
 
 bool ArmmsLimits::callbackResetLowerLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackResetLowerLimit_");
   setLowerLimit_(NAN);
   return true;
 }
 
 bool ArmmsLimits::callbackEnableUpperLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackEnableUpperLimit_");
   enable_upper_limit_ = req.data;
   res.success = true;
   res.message = "Upper limit correctly enabled";
@@ -175,7 +164,6 @@ bool ArmmsLimits::callbackEnableUpperLimit_(std_srvs::SetBool::Request& req, std
 
 bool ArmmsLimits::callbackEnableLowerLimit_(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsLimits", "callbackEnableLowerLimit_");
   enable_lower_limit_ = req.data;
   res.success = true;
   res.message = "Lower limit correctly enabled";

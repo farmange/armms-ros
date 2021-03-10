@@ -18,27 +18,24 @@ ArmmsBagRecorder::ArmmsBagRecorder(const ros::NodeHandle& nh) : nh_(nh)
 
 void ArmmsBagRecorder::start()
 {
-  ROS_DEBUG_NAMED("ArmmsBagRecorder", "Start bag recording");
   std_srvs::Empty msg;
   if (!start_bag_rec_srv_.call(msg))
   {
-    ROS_ERROR_NAMED("ArmmsBagRecorder", "Cannot call start service");
+    ROS_ERROR_NAMED("ArmmsBagRecorder", "Cannot call \"start\" service");
   }
 }
 
 void ArmmsBagRecorder::stop()
 {
-  ROS_DEBUG_NAMED("ArmmsBagRecorder", "Stop bag recording");
   std_srvs::Empty msg;
   if (!stop_bag_rec_srv_.call(msg))
   {
-    ROS_ERROR_NAMED("ArmmsBagRecorder", "Cannot call stop service");
+    ROS_ERROR_NAMED("ArmmsBagRecorder", "Cannot call \"stop\" service");
   }
 }
 
 void ArmmsBagRecorder::initializeServices_()
 {
-  ROS_DEBUG_NAMED("ArmmsBagRecorder", "initializeServices");
   ros::service::waitForService("/armms_recorder/start");
   ros::service::waitForService("/armms_recorder/stop");
   start_bag_rec_srv_ = nh_.serviceClient<std_srvs::Empty>("/armms_recorder/start");

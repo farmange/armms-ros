@@ -23,7 +23,7 @@
 
 #include "armms_control/fsm/state.h"
 #include "armms_control/fsm/transition.h"
-// TODO Change namespace to be package independant 
+// TODO Change namespace to be package independant
 namespace armms_control
 {
 template <class T>
@@ -32,12 +32,12 @@ class Engine
 public:
   Engine(T* obj)
   {
-    ROS_DEBUG("Construct FSM engine");
+    ROS_DEBUG_NAMED("FsmEngine", "Construct FSM engine");
     obj_ = obj;
     current_state_ == nullptr;
     if (obj_ == nullptr)
     {
-      ROS_ERROR("Bad state machine context object !");
+      ROS_ERROR_NAMED("FsmEngine", "Bad state machine context object !");
       return;
     }
   };
@@ -58,11 +58,12 @@ public:
   {
     if (current_state_ == nullptr)
     {
-      ROS_ERROR("Undefined current state !");
+      ROS_ERROR_NAMED("FsmEngine", "Undefined current state !");
       return;
     }
     bool found = false;
-    ROS_DEBUG("Looking for transition for the current state '%s'", current_state_->getName().c_str());
+    ROS_DEBUG_NAMED("FsmEngine", "Looking for transition for the current state '%s'",
+                    current_state_->getName().c_str());
 
     for (int i = 0; i < transitions_.size(); i++)
     {
@@ -75,11 +76,12 @@ public:
       {
         if (init_state[j] == current_state_)
         {
-          ROS_DEBUG("Found transition to go from '%s' to '%s' state...", current_state_->getName().c_str(),
-                    transitions_[i]->getFinalState()->getName().c_str());
+          ROS_DEBUG_NAMED("FsmEngine", "Found transition to go from '%s' to '%s' state...",
+                          current_state_->getName().c_str(), transitions_[i]->getFinalState()->getName().c_str());
           if (transitions_[i]->isConditionFulfilled())
           {
-            ROS_ERROR("=> Condition is fulfil ! Go to '%s'", transitions_[i]->getFinalState()->getName().c_str());
+            ROS_INFO_NAMED("FsmEngine", "Condition is fulfil to go from '%s' to '%s'",
+                           current_state_->getName().c_str(), transitions_[i]->getFinalState()->getName().c_str());
             current_state_->exit();
             current_state_ = transitions_[i]->getFinalState();
             current_state_->enter();
@@ -108,5 +110,5 @@ private:
   std::vector<State<T>*> states_;
   std::vector<Transition<T>*> transitions_;
 };
-}  // namespace orthopus_addon
+}  // namespace armms_control
 #endif
