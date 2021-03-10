@@ -19,6 +19,7 @@ add_service_files(
   SetInt.srv
   SetLedColor.srv
   SetMotorPower.srv
+  SetVelocitySetpoint.srv
 )
 
 # add_action_files(DIRECTORY action

@@ -90,21 +90,25 @@ void ArmmsLimits::publishLimits()
 void ArmmsLimits::initializeServices_()
 {
   ROS_DEBUG_NAMED("ArmmsLimits", "initializeServices_");
-  set_upper_limit_service_ = nh_.advertiseService("/set_upper_limit", &ArmmsLimits::callbackSetUpperLimit_, this);
-  set_lower_limit_service_ = nh_.advertiseService("/set_lower_limit", &ArmmsLimits::callbackSetLowerLimit_, this);
-  reset_upper_limit_service_ = nh_.advertiseService("/reset_upper_limit", &ArmmsLimits::callbackResetUpperLimit_, this);
-  reset_lower_limit_service_ = nh_.advertiseService("/reset_lower_limit", &ArmmsLimits::callbackResetLowerLimit_, this);
+  set_upper_limit_service_ =
+      nh_.advertiseService("/armms_control/set_upper_limit", &ArmmsLimits::callbackSetUpperLimit_, this);
+  set_lower_limit_service_ =
+      nh_.advertiseService("/armms_control/set_lower_limit", &ArmmsLimits::callbackSetLowerLimit_, this);
+  reset_upper_limit_service_ =
+      nh_.advertiseService("/armms_control/reset_upper_limit", &ArmmsLimits::callbackResetUpperLimit_, this);
+  reset_lower_limit_service_ =
+      nh_.advertiseService("/armms_control/reset_lower_limit", &ArmmsLimits::callbackResetLowerLimit_, this);
   enable_upper_limit_service_ =
-      nh_.advertiseService("/enable_upper_limit", &ArmmsLimits::callbackEnableUpperLimit_, this);
+      nh_.advertiseService("/armms_control/enable_upper_limit", &ArmmsLimits::callbackEnableUpperLimit_, this);
   enable_lower_limit_service_ =
-      nh_.advertiseService("/enable_lower_limit", &ArmmsLimits::callbackEnableLowerLimit_, this);
+      nh_.advertiseService("/armms_control/enable_lower_limit", &ArmmsLimits::callbackEnableLowerLimit_, this);
 }
 
 void ArmmsLimits::initializePublishers_()
 {
   ROS_DEBUG_NAMED("ArmmsLimits", "initializePublishers_");
-  upper_limit_pub_ = nh_.advertise<std_msgs::Float64>("/upper_limit", 1);
-  lower_limit_pub_ = nh_.advertise<std_msgs::Float64>("/lower_limit", 1);
+  upper_limit_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/upper_limit", 1);
+  lower_limit_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/lower_limit", 1);
 }
 
 void ArmmsLimits::retrieveParameters_()

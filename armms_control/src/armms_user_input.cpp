@@ -15,6 +15,7 @@ ArmmsUserInput::ArmmsUserInput()
   retrieveParameters_();
   initializeServices_();
   initializeSubscribers_();
+  initializePublishers_();
 
   if (joint_default_velocity_ > joint_max_velocity_)
   {
@@ -31,6 +32,8 @@ void ArmmsUserInput::initializeServices_()
 
   pwr_btn_ev_service_ =
       nh_.advertiseService("/armms_rpi/power_button_event", &ArmmsUserInput::callbackPowerButtonEvent_, this);
+  setpoint_service_ =
+      nh_.advertiseService("/armms_control/set_velocity_setpoint", &ArmmsUserInput::callbackSetVelocitySetpoint_, this);
 }
 
 void ArmmsUserInput::initializeSubscribers_()
@@ -41,8 +44,15 @@ void ArmmsUserInput::initializeSubscribers_()
 
   user_btn_down_sub_ = nh_.subscribe("/armms_rpi/user_button_down", 1, &ArmmsUserInput::callbackUserBtnDown_, this);
   user_btn_up_sub_ = nh_.subscribe("/armms_rpi/user_button_up", 1, &ArmmsUserInput::callbackUserBtnUp_, this);
-  user_setpoint_velocity_sub_ =
-      nh_.subscribe("/armms_control/velocity_setpoint", 1, &ArmmsUserInput::callbackVelocitySetpoint_, this);
+  webgui_btn_down_sub_ =
+      nh_.subscribe("/armms_webgui/user_button_down", 1, &ArmmsUserInput::callbackWebguiBtnDown_, this);
+  webgui_btn_up_sub_ = nh_.subscribe("/armms_webgui/user_button_up", 1, &ArmmsUserInput::callbackWebguiBtnUp_, this);
+}
+
+void ArmmsUserInput::initializePublishers_()
+{
+  ROS_DEBUG_NAMED("ArmmsUserInput", "initializePublishers_");
+  setpoint_velocity_pub_ = nh_.advertise<std_msgs::Float64>("/armms_control/velocity_setpoint", 1);
 }
 
 void ArmmsUserInput::retrieveParameters_()
@@ -72,6 +82,26 @@ void ArmmsUserInput::callbackUserBtnUp_(const std_msgs::BoolPtr& msg)
   user_btn_up_ = msg->data;
 }
 
+void ArmmsUserInput::callbackWebguiBtnDown_(const std_msgs::BoolPtr& msg)
+{
+  /* Detect rising edge of the button to reset local joint position */
+  if (!webgui_btn_down_ && msg->data)
+  {
+    refresh_joint_state_ = true;
+  }
+  webgui_btn_down_ = msg->data;
+}
+
+void ArmmsUserInput::callbackWebguiBtnUp_(const std_msgs::BoolPtr& msg)
+{
+  /* Detect rising edge of the button to reset local joint position */
+  if (!webgui_btn_up_ && msg->data)
+  {
+    refresh_joint_state_ = true;
+  }
+  webgui_btn_up_ = msg->data;
+}
+
 void ArmmsUserInput::callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg)
 {
   joint_setpoint_velocity_ = msg->data;
@@ -84,7 +114,7 @@ void ArmmsUserInput::callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg)
 bool ArmmsUserInput::callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request& req,
                                                armms_msgs::ButtonEvent::Response& res)
 {
-  ROS_INFO_NAMED("ArmmsUserInput", "callbackPowerButtonEvent_");
+  ROS_DEBUG_NAMED("ArmmsUserInput", "callbackPowerButtonEvent_");
   if (req.button_event == 1)
   {
     /* Short press */
@@ -99,6 +129,33 @@ bool ArmmsUserInput::callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request&
   {
     ROS_ERROR_NAMED("ArmmsUserInput", "Button event not supported (%d)", req.button_event);
     return false;
+  }
+  return true;
+}
+
+bool ArmmsUserInput::callbackSetVelocitySetpoint_(armms_msgs::SetVelocitySetpoint::Request& req,
+                                                  armms_msgs::SetVelocitySetpoint::Response& res)
+{
+  ROS_DEBUG_NAMED("ArmmsUserInput", "callbackSetVelocitySetpoint_");
+  if (req.value < 0)
+  {
+    ROS_WARN_NAMED("ArmmsUserInput", "Negative velocity setpoint are not allowed (value:%f)", req.value);
+    return false;
+  }
+  else
+  {
+    if (req.value > joint_max_velocity_)
+    {
+      joint_setpoint_velocity_ = joint_max_velocity_;
+      ROS_WARN_NAMED("ArmmsUserInput",
+                     "Velocity setpoint (%f) is bigger than max velocity allowed (%f) not allowed. Value "
+                     "requested will be saturated !",
+                     req.value, joint_max_velocity_);
+    }
+    else
+    {
+      joint_setpoint_velocity_ = req.value;
+    }
   }
   return true;
 }
@@ -141,11 +198,32 @@ void ArmmsUserInput::processUserInput()
     velocity_command_ = -joint_setpoint_velocity_;
     ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from down button : %f", velocity_command_);
   }
+  else if (webgui_btn_up_ && webgui_btn_down_)
+  {
+    /* do nothing */
+    velocity_command_ = 0.0;
+    ROS_INFO_NAMED("ArmmsUserInput", "Conflicting up and down button pressed at the same time !");
+  }
+  else if (webgui_btn_up_)
+  {
+    velocity_command_ = +joint_setpoint_velocity_;
+    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from up button : %f", velocity_command_);
+  }
+  else if (webgui_btn_down_)
+  {
+    velocity_command_ = -joint_setpoint_velocity_;
+    ROS_INFO_NAMED("ArmmsUserInput", "velocity command received from down button : %f", velocity_command_);
+  }
   else
   {
     velocity_command_ = 0.0;
     ROS_INFO_NAMED("ArmmsUserInput", "no velocity command received !");
   }
+
+  /* publish velocity setpoint */
+  std_msgs::Float64 msg;
+  msg.data = joint_setpoint_velocity_;
+  setpoint_velocity_pub_.publish(msg);
 }
 
 void ArmmsUserInput::clearUserInput()

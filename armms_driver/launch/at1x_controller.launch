@@ -13,4 +13,9 @@
             /at1x/controller/state
             /at1x/controller/position/joint1
         "/>
+
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+        <arg name="port" value="9090"/>
+    </include>
+    
 </launch>

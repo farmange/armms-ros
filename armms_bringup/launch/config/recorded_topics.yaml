@@ -7,6 +7,6 @@ topics:
 - /at1x/controller/position/joint1/command
 - /joint_states
 - /lower_limit
+- /upper_limit
 # - /rosout
 # - /rosout_agg
-- /upper_limit

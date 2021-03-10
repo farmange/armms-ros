@@ -1,7 +1,10 @@
 var ros;
 var upper_limit_sub;
 var lower_limit_sub;
-var gui_cmd_pub;
+var vel_setpoint_sub;
+
+var gui_up_pub;
+var gui_down_pub;
 var spd_setpoint_pub;
 
 var set_zero_torque_srv;
@@ -11,11 +14,16 @@ var reset_lower_limit_srv;
 var reset_upper_limit_srv;
 var enable_lower_limit_srv;
 var enable_upper_limit_srv;
+var pwr_button_srv;
+var setpoint_srv;
 
 var upper_limit;
 var lower_limit;
-var speed_setpoint;
-var speed_cmd = 0.0;
+var speed_setpoint = 15;
+var up_btn_cmd = false;
+var down_btn_cmd = false;
+
+var slider_busy = false;
 
 var mainTimer;
 
@@ -33,27 +41,31 @@ function stopLoop() {
 function UpdatePage() {
   $('#upper_limit').val(upper_limit);
   $('#lower_limit').val(lower_limit);
+  // $('#speed_slider').attr('value', speed_setpoint);
+  // $('#speed_slider').val(speed_setpoint);
+  // rendu a mettre a jour le slider en fonction du topic setpoint
 }
 
-
-function publishSpeed() {
-  var msg = new ROSLIB.Message({
-    data: parseFloat(speed_cmd),
+function publishMessage() {
+  /* publish up button state */
+  var msg1 = new ROSLIB.Message({
+    data: up_btn_cmd,
   });
-  gui_cmd_pub.publish(msg);
+  gui_up_pub.publish(msg1);
 
-  var msg_setpoint = new ROSLIB.Message({
-    data: parseFloat(speed_setpoint),
+  /* publish down button state */
+  var msg2 = new ROSLIB.Message({
+    data: down_btn_cmd,
   });
-  spd_setpoint_pub.publish(msg_setpoint);
+  gui_down_pub.publish(msg2);
 }
 
 
 function mainLoop() {
   if (enable_loop) {
     // console.log(speed_setpoint);
-    // UpdatePage();
-    publishSpeed();
+    UpdatePage();
+    publishMessage();
   }
 }
 
@@ -110,20 +122,35 @@ function SetZeroTorque(value) {
   // set_zero_torque_srv.callService(request, function (result) { });
 }
 
-function GoUp() {
-  speed_cmd = speed_setpoint;
+function OnUpBtnPressed() {
+  up_btn_cmd = true;
 }
 
-function GoDown() {
-  speed_cmd = -speed_setpoint;
+function OnDownBtnPressed() {
+  down_btn_cmd = true;
 }
 
-function StopMotion() {
-  speed_cmd = 0.0;
+function OnUpBtnRelease() {
+  up_btn_cmd = false;
 }
+
+function OnDownBtnRelease() {
+  down_btn_cmd = false;
+}
+
+function OnSetpointChanged(value) {
+  console.log('OnSetpointChanged');
+
+  var request = new ROSLIB.ServiceRequest({
+    value: parseFloat(value)
+  });
+  setpoint_srv.callService(request, function (result) { });
+}
+
 
 window.onload = function () {
-  speed_cmd = 0.0;
+  up_btn_cmd = false;
+  down_btn_cmd = false;
 
   var robot_IP = document.domain;
   if (robot_IP == "") {
@@ -155,38 +182,64 @@ window.onload = function () {
   // ----------------------
   upper_limit_sub = new ROSLIB.Topic({
     ros: ros,
-    name: '/upper_limit',
+    name: '/armms_control/upper_limit',
     messageType: 'std_msgs/Float64'
   });
   upper_limit_sub.subscribe(function (message) {
     console.debug('Received message on ' + upper_limit_sub.name + ': ' + message.data);
     upper_limit = message.data;
-    UpdatePage();
   });
 
   lower_limit_sub = new ROSLIB.Topic({
     ros: ros,
-    name: '/lower_limit',
+    name: '/armms_control/lower_limit',
     messageType: 'std_msgs/Float64'
   });
   lower_limit_sub.subscribe(function (message) {
     console.debug('Received message on ' + lower_limit_sub.name + ': ' + message.data);
     lower_limit = message.data;
-    UpdatePage();
   });
 
+  vel_setpoint_sub = new ROSLIB.Topic({
+    ros: ros,
+    name: '/armms_control/velocity_setpoint',
+    messageType: 'std_msgs/Float64'
+  });
+  vel_setpoint_sub.subscribe(function (message) {
+    console.debug('Received message on ' + vel_setpoint_sub.name + ': ' + message.data);
+    if(slider_busy == false)
+    {
+      speed_setpoint = message.data;
+      $('#speed_slider').attr('value', speed_setpoint);
+      $('#speed_slider').val(speed_setpoint);
+      $('#speed_slider').next().html(speed_setpoint);
+    }
+  });
+
+  // Get ros parameters
+  // ----------------------
+  ros.getParams(function(params) {
+    console.log(params);
+  });
+  var vel_param = new ROSLIB.Param({
+    ros : ros,
+    name : '/joint_limits/joint1/max_velocity'
+  });
+  vel_param.get(function(value) {
+    console.log('MAX VAL: ' + value);
+    MAX_SPEED = value;
+  });
   // Setup topic publishers 
   // ----------------------
-  gui_cmd_pub = new ROSLIB.Topic({
+  gui_up_pub = new ROSLIB.Topic({
     ros: ros,
-    name: '/gui_cmd',
+    name: '/armms_webgui/user_button_up',
     messageType: 'std_msgs/Float64'
   });
 
-  // ----------------------
-  spd_setpoint_pub = new ROSLIB.Topic({
+  gui_down_pub = new ROSLIB.Topic({
     ros: ros,
-    name: '/speed_setpoint',
+    name: '/armms_webgui/user_button_down',
     messageType: 'std_msgs/Float64'
   });
 
@@ -194,52 +247,61 @@ window.onload = function () {
   // ----------------------
   set_lower_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/set_lower_limit',
+    name: '/armms_control/set_lower_limit',
     serviceType: 'std_srvs/Empty'
   });
 
   set_upper_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/set_upper_limit',
+    name: '/armms_control/set_upper_limit',
     serviceType: 'std_srvs/Empty'
   });
 
   reset_lower_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/reset_lower_limit',
+    name: '/armms_control/reset_lower_limit',
     serviceType: 'std_srvs/Empty'
   });
 
   reset_upper_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/reset_upper_limit',
+    name: '/armms_control/reset_upper_limit',
     serviceType: 'std_srvs/Empty'
   });
 
   enable_lower_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/enable_lower_limit',
+    name: '/armms_control/enable_lower_limit',
     serviceType: 'std_srvs/SetBool'
   });
 
   enable_upper_limit_srv = new ROSLIB.Service({
     ros: ros,
-    name: '/enable_upper_limit',
+    name: '/armms_control/enable_upper_limit',
     serviceType: 'std_srvs/SetBool'
   });
 
-  // set_zero_torque_srv = new ROSLIB.Service({
-  //   ros: ros,
-  //   name: '/j2n6s300_driver/in/set_zero_torques',
-  //   serviceType: 'kinova_msgs/ ZeroTorques'
-  // });
+  pwr_button_srv = new ROSLIB.Service({
+    ros: ros,
+    name: '/armms_rpi/power_button_event',
+    serviceType: 'armms_msgs/ButtonEvent'
+  });
+
+  setpoint_srv = new ROSLIB.Service({
+    ros: ros,
+    name: '/armms_control/set_velocity_setpoint',
+    serviceType: 'armms_msgs/SetVelocitySetpoint'
+  });
 
 
   $('#speed_slider').attr('max', MAX_SPEED);
-  $('#speed_slider').attr('value', (MAX_SPEED / 2.0));
-  $('#speed_slider').val(MAX_SPEED / 2.0);
+  $('#speed_slider').attr('min', 0.0);
+  $('#speed_slider').attr('value', speed_setpoint);
+  $('#speed_slider').val(speed_setpoint);
+
   rangeSlider();
-  speed_setpoint = $('#speed_slider').val();
+
+
 
   $('#enable_upperlim')[0].checked = true;
   $('#enable_lowerlim')[0].checked = true;
@@ -256,15 +318,15 @@ var rangeSlider = function () {
     range = $('.range-slider__range'),
     value = $('.range-slider__value');
 
-  slider.each(function () {
-    value.each(function () {
-      var value = $(this).prev().attr('value');
-      $(this).html(value);
-    });
+    slider.each(function () {
+      value.each(function () {
+        var value = $(this).prev().attr('value');
+        $(this).html(value);
+      });
 
-    range.on('input', function () {
-      $(this).next(value).html(this.value);
-    });
+      range.on('input', function () {
+        $(this).next().html(this.value);
+      });
   });
 };
 
@@ -292,18 +354,18 @@ $(function () {
 
   $('#up_btn')
     .mousedown(function () {
-      GoUp();
+      OnUpBtnPressed();
     })
     .mouseup(function () {
-      StopMotion();
+      OnUpBtnRelease();
     });
 
   $('#down_btn')
     .mousedown(function () {
-      GoDown();
+      OnDownBtnPressed();
     })
     .mouseup(function () {
-      StopMotion();
+      OnDownBtnRelease();
     });
 
   $('#set_zero_torque')
@@ -325,9 +387,13 @@ $(function () {
 
   /* Configure speed slider calback */
   $('#speed_slider')
-    .on('input', function () {
-      speed_setpoint = this.value;
-    });
+  .on('change', function () {
+    OnSetpointChanged(this.value);
+    slider_busy = false;
+  })
+  .on('input', function () {
+    slider_busy = true;
+  });
 
 });
 

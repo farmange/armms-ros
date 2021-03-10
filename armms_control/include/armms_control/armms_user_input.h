@@ -14,6 +14,7 @@
 #include "std_msgs/Bool.h"
 #include "std_msgs/Float64.h"
 #include "armms_msgs/ButtonEvent.h"
+#include "armms_msgs/SetVelocitySetpoint.h"
 
 #include "armms_control/armms_user_input.h"
 #include "armms_control/at1x_fsm.h"
@@ -34,10 +35,13 @@ private:
   ros::NodeHandle nh_;
 
   ros::ServiceServer pwr_btn_ev_service_;
+  ros::ServiceServer setpoint_service_;
 
   ros::Subscriber user_btn_down_sub_;
   ros::Subscriber user_btn_up_sub_;
-  ros::Subscriber user_setpoint_velocity_sub_;
+  ros::Subscriber webgui_btn_down_sub_;
+  ros::Subscriber webgui_btn_up_sub_;
+  ros::Publisher setpoint_velocity_pub_;
 
   bool refresh_joint_state_;
   double joint_max_velocity_;
@@ -48,18 +52,25 @@ private:
 
   bool user_btn_down_;
   bool user_btn_up_;
+  bool webgui_btn_down_;
+  bool webgui_btn_up_;
 
   FsmInputEvent input_event_requested_;
 
   void retrieveParameters_();
   void initializeServices_();
   void initializeSubscribers_();
-
+  void initializePublishers_();
   void callbackUserBtnDown_(const std_msgs::BoolPtr& msg);
   void callbackUserBtnUp_(const std_msgs::BoolPtr& msg);
+  void callbackWebguiBtnDown_(const std_msgs::BoolPtr& msg);
+  void callbackWebguiBtnUp_(const std_msgs::BoolPtr& msg);
+
   void callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg);
 
   bool callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request& req, armms_msgs::ButtonEvent::Response& res);
+  bool callbackSetVelocitySetpoint_(armms_msgs::SetVelocitySetpoint::Request& req,
+                                    armms_msgs::SetVelocitySetpoint::Response& res);
 
   void init_();
 };
