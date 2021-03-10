@@ -41,9 +41,6 @@ function stopLoop() {
 function UpdatePage() {
   $('#upper_limit').val(upper_limit);
   $('#lower_limit').val(lower_limit);
-  // $('#speed_slider').attr('value', speed_setpoint);
-  // $('#speed_slider').val(speed_setpoint);
-  // rendu a mettre a jour le slider en fonction du topic setpoint
 }
 
 function publishMessage() {
@@ -63,43 +60,32 @@ function publishMessage() {
 
 function mainLoop() {
   if (enable_loop) {
-    // console.log(speed_setpoint);
     UpdatePage();
     publishMessage();
   }
 }
 
 function SetLowerLimit() {
-  console.log('SetLowerLimit');
-
   var request = new ROSLIB.ServiceRequest({});
   set_lower_limit_srv.callService(request, function (result) { });
 }
 
 function SetUpperLimit() {
-  console.log('SetUpperLimit');
-
   var request = new ROSLIB.ServiceRequest({});
   set_upper_limit_srv.callService(request, function (result) { });
 }
 
 function ResetLowerLimit() {
-  console.log('ResetLowerLimit');
-
   var request = new ROSLIB.ServiceRequest({});
   reset_lower_limit_srv.callService(request, function (result) { });
 }
 
 function ResetUpperLimit() {
-  console.log('ResetUpperLimit');
-
   var request = new ROSLIB.ServiceRequest({});
   reset_upper_limit_srv.callService(request, function (result) { });
 }
 
 function EnableLowerLimit(value) {
-  console.log('EnableLowerLimit');
-
   var request = new ROSLIB.ServiceRequest({
     data: value
   });
@@ -107,8 +93,6 @@ function EnableLowerLimit(value) {
 }
 
 function EnableUpperLimit(value) {
-  console.log('EnableUpperLimit');
-
   var request = new ROSLIB.ServiceRequest({
     data: value
   });
@@ -116,8 +100,6 @@ function EnableUpperLimit(value) {
 }
 
 function SetZeroTorque(value) {
-  console.log('SetZeroTorque');
-
   var request = new ROSLIB.ServiceRequest({});
   // set_zero_torque_srv.callService(request, function (result) { });
 }
@@ -139,8 +121,6 @@ function OnDownBtnRelease() {
 }
 
 function OnSetpointChanged(value) {
-  console.log('OnSetpointChanged');
-
   var request = new ROSLIB.ServiceRequest({
     value: parseFloat(value)
   });
@@ -186,7 +166,7 @@ window.onload = function () {
     messageType: 'std_msgs/Float64'
   });
   upper_limit_sub.subscribe(function (message) {
-    console.debug('Received message on ' + upper_limit_sub.name + ': ' + message.data);
+    // console.debug('Received message on ' + upper_limit_sub.name + ': ' + message.data);
     upper_limit = message.data;
   });
 
@@ -196,7 +176,7 @@ window.onload = function () {
     messageType: 'std_msgs/Float64'
   });
   lower_limit_sub.subscribe(function (message) {
-    console.debug('Received message on ' + lower_limit_sub.name + ': ' + message.data);
+    // console.debug('Received message on ' + lower_limit_sub.name + ': ' + message.data);
     lower_limit = message.data;
   });
 
@@ -206,7 +186,7 @@ window.onload = function () {
     messageType: 'std_msgs/Float64'
   });
   vel_setpoint_sub.subscribe(function (message) {
-    console.debug('Received message on ' + vel_setpoint_sub.name + ': ' + message.data);
+    // console.debug('Received message on ' + vel_setpoint_sub.name + ': ' + message.data);
     if(slider_busy == false)
     {
       speed_setpoint = message.data;
@@ -226,7 +206,7 @@ window.onload = function () {
     name : '/joint_limits/joint1/max_velocity'
   });
   vel_param.get(function(value) {
-    console.log('MAX VAL: ' + value);
+    console.log('MAX_SPEED from ' + vel_setpoint_sub.name + ' : ' + value);
     MAX_SPEED = value;
   });
   // Setup topic publishers 
@@ -298,10 +278,7 @@ window.onload = function () {
   $('#speed_slider').attr('min', 0.0);
   $('#speed_slider').attr('value', speed_setpoint);
   $('#speed_slider').val(speed_setpoint);
-
   rangeSlider();
-
-
 
   $('#enable_upperlim')[0].checked = true;
   $('#enable_lowerlim')[0].checked = true;
