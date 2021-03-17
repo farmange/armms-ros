@@ -71,6 +71,12 @@ void ArmmsPowerButtonLed::setLedColor(uint8_t r, uint8_t g, uint8_t b, uint8_t b
   red_led_state_ = 100 - scaleColorPwm_(r);
   green_led_state_ = 100 - scaleColorPwm_(g);
   blue_led_state_ = 100 - scaleColorPwm_(b);
+  /* Reset Blink counter when led color is set */
+  led_blink_counter_ = 0;
+  /* Force led state. This allow to set led state without calling updateLed_ method */
+  softPwmWrite(red_led_pin_, red_led_state_);
+  softPwmWrite(green_led_pin_, green_led_state_);
+  softPwmWrite(blue_led_pin_, blue_led_state_);
 }
 
 void ArmmsPowerButtonLed::updateLed_()
@@ -90,12 +96,14 @@ void ArmmsPowerButtonLed::updateLed_()
   led_blink_counter_++;
   if (led_blink_state_)
   {
+    /* Set led to user defined value */
     softPwmWrite(red_led_pin_, red_led_state_);
     softPwmWrite(green_led_pin_, green_led_state_);
     softPwmWrite(blue_led_pin_, blue_led_state_);
   }
   else
   {
+    /* Set led to off */
     softPwmWrite(red_led_pin_, 100);
     softPwmWrite(green_led_pin_, 100);
     softPwmWrite(blue_led_pin_, 100);

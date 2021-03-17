@@ -9,7 +9,8 @@
 
 namespace armms_rpi
 {
-ArmmsShutdownManager::ArmmsShutdownManager(const ros::NodeHandle& nh) : nh_(nh)
+ArmmsShutdownManager::ArmmsShutdownManager(const ros::NodeHandle& nh, ArmmsPowerButtonLed* power_button_led)
+  : nh_(nh), power_button_led_(power_button_led)
 {
   initializeServices_();
 }
@@ -27,6 +28,7 @@ void ArmmsShutdownManager::reboot()
 void ArmmsShutdownManager::shutdownThread_()
 {
   ROS_INFO("Execute shutdown thread...");
+  power_button_led_->setLedColor(255, 0, 0, 0);
   /* The following command requires that execution access was grant to the user
    * (with systemd only primary group is defined at startup).
    */
@@ -36,6 +38,7 @@ void ArmmsShutdownManager::shutdownThread_()
 void ArmmsShutdownManager::rebootThread_()
 {
   ROS_INFO("Execute reboot thread...");
+  power_button_led_->setLedColor(255, 0, 0, 0);
   /* The following command requires that execution access was grant to the user
    * (with systemd only primary group is defined at startup).
    */

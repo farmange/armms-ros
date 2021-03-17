@@ -43,7 +43,7 @@ ArmmsRpi::ArmmsRpi()
   ROS_INFO("Create switch limit");
   switch_limit_.reset(new ArmmsSwitchLimit(nh_));
   ROS_INFO("Create shutdown manager");
-  shutdown_manager_.reset(new ArmmsShutdownManager(nh_));
+  shutdown_manager_.reset(new ArmmsShutdownManager(nh_, power_button_led_.get()));
   ROS_INFO("Create diagnostic thread");
   rpi_diagnostics_.reset(new ArmmsDiagnostics(nh_));
 

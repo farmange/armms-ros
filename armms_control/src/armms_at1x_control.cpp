@@ -242,11 +242,11 @@ void ArmmsAT1XControl::finalizedEnter_()
   ROS_WARN_NAMED("ArmmsAT1XControl", "Control state machine enters in FINALIZED state...");
   status_ = stopMotor_();
   setLedColor_(255, 0, 0, 0);  // red
+  shutdown_();
 }
 
 void ArmmsAT1XControl::finalizedUpdate_()
 {
-  shutdown_();
 }
 
 /******** FSM Transition definition ********/

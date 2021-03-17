@@ -14,22 +14,22 @@
 #include <thread>
 
 #include "armms_msgs/SetInt.h"
-#include "armms_msgs/SetLedColor.h"
-#include "armms_msgs/ButtonEvent.h"
+#include "armms_rpi/armms_power_button_led.h"
 
 namespace armms_rpi
 {
 class ArmmsShutdownManager
 {
 public:
-  ArmmsShutdownManager(const ros::NodeHandle& nh);
+  ArmmsShutdownManager(const ros::NodeHandle& nh, ArmmsPowerButtonLed* power_button_led);
   void shutdown();
   void reboot();
+
 private:
   ros::NodeHandle nh_;
   ros::ServiceServer shutdown_service_;
   boost::shared_ptr<std::thread> system_thread_;
-
+  ArmmsPowerButtonLed* power_button_led_;
   void initializeServices_();
   void shutdownThread_();
   void rebootThread_();
