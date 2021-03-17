@@ -1,0 +1,12 @@
+#!/usr/bin/env python
+
+import robot_upstart
+import os
+
+j = robot_upstart.Job(name="armms-ros")
+j.symlink = True
+
+# other launch files will be launched in niryo_one_ros_setup
+j.add(package="armms_bringup", filename="launch/at1x_robot.launch")
+
+j.install()

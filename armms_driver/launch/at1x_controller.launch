@@ -1,0 +1,21 @@
+<launch>
+    <rosparam file="$(find armms_driver)/launch/config/hardware.yaml" command="load"/>
+    <rosparam file="$(find armms_driver)/launch/config/controllers.yaml" command="load"/>
+    <rosparam file="$(find armms_driver)/launch/config/joint_limits.yaml" command="load"/>
+
+
+    <node name="armms_driver_node" pkg="armms_driver" type="armms_driver" output="screen">
+        <rosparam file="$(find armms_driver)/launch/config/armms_driver.yaml" /> 
+    </node>
+
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/"
+        args="
+            /at1x/controller/state
+            /at1x/controller/position/joint1
+        "/>
+
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+        <arg name="port" value="9090"/>
+    </include>
+    
+</launch>

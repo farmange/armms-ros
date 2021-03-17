@@ -1,0 +1,5 @@
+#
+#  ### Params of the AT1X controller ###
+#
+armms_control_rate          : 100     # Hz
+default_velocity            : 10.0
