@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : armms_api_diagnostics.h
+// Name        : armms_diagnostics.h
 // Author      : Florian Armange, ORTHOPUS
 // Version     : 0.0
 // Copyright   : LGPLv3
@@ -7,8 +7,8 @@
 //               of the libkinovadrv
 //============================================================================
 
-#ifndef ARMMS_RPI_ARMMS_RPI_DIAGNOSTICS_H
-#define ARMMS_RPI_ARMMS_RPI_DIAGNOSTICS_H
+#ifndef ARMMS_RPI_ARMMS_DIAGNOSTICS_H
+#define ARMMS_RPI_ARMMS_DIAGNOSTICS_H
 
 #include <ros/ros.h>
 #include <fstream>
@@ -17,21 +17,17 @@
 
 namespace armms_rpi
 {
-class ArmmsRpiDiagnostics
+class ArmmsDiagnostics
 {
 public:
-  ArmmsRpiDiagnostics();
-
-  int getCpuTemperature();
-
-  void startReadingData();
+  ArmmsDiagnostics(const ros::NodeHandle& nh);
+  float getCpuTemperature();
 
 private:
   ros::NodeHandle nh_;
-
-  ros::Timer non_realtime_loop_;
+  ros::Timer diag_non_rt_loop_;
   ros::ServiceClient shutdown_srv_;
-  int cpu_temperature_;
+  float cpu_temperature_;
   int loop_rate_;
   void retrieveParameters_();
   void initializeServices_();

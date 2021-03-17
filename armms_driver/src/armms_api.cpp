@@ -18,7 +18,6 @@ ArmmsAPI::ArmmsAPI()
 
 int ArmmsAPI::init(const std::string device, const bool& debug_log)
 {
-  ROS_INFO("ArmmsAPI::init");
   if (loadLibrary("libkinovadrv.so") != 0)
   {
     ROS_FATAL("Failed to load library libkinovadrv.so !");
@@ -27,7 +26,7 @@ int ArmmsAPI::init(const std::string device, const bool& debug_log)
 
   if (driver_->init(device, debug_log) != APILayer::API_OK)
   {
-    ROS_FATAL("Failed to initialize driver !");
+    ROS_FATAL("Failed to initialize driver (device: %s)!", device.c_str());
     return 1;
   }
   ROS_INFO("Driver initialisation done.");

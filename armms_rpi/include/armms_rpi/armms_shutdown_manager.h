@@ -23,11 +23,12 @@ class ArmmsShutdownManager
 {
 public:
   ArmmsShutdownManager(const ros::NodeHandle& nh);
-
+  void shutdown();
+  void reboot();
 private:
   ros::NodeHandle nh_;
   ros::ServiceServer shutdown_service_;
-  boost::shared_ptr<std::thread> shutdown_thread_;
+  boost::shared_ptr<std::thread> system_thread_;
 
   void initializeServices_();
   void shutdownThread_();

@@ -9,38 +9,38 @@
 
 namespace armms_control
 {
-ArmmsAT1XControl::ArmmsAT1XControl() : limit_handler(joint_position_)
+ArmmsAT1XControl::ArmmsAT1XControl() : limit_handler_(joint_position_)
 {
-  sampling_frequency_ = 0;
+  loop_rate_ = 0;
+  status_ = OK;
   retrieveParameters_();
   initializeServices_();
   initializeSubscribers_();
   initializePublishers_();
   initializeStateMachine_();
 
-  if (sampling_frequency_ > 0)
+  if (loop_rate_ > 0)
   {
-    // TODO unused sampling period
-    sampling_period_ = 1.0 / sampling_frequency_;
+    sampling_period_ = 1.0 / loop_rate_;
   }
   else
   {
-    ROS_ERROR("Sampling frequency could not be lower or equal to zero : %d", sampling_frequency_);
+    ROS_ERROR("Sampling frequency could not be lower or equal to zero : %d", loop_rate_);
     ros::shutdown();
     return;
   }
 
-  ros::Rate loop_rate = ros::Rate(sampling_frequency_);
+  ros::Rate loop_rate = ros::Rate(loop_rate_);
 
   while (ros::ok())
   {
     ros::spinOnce();
-    user_input_handler.processUserInput();
+    user_input_handler_.processUserInput();
     ROS_DEBUG_NAMED("ArmmsAT1XControl", "Current state is '%s' and input event is '%s'",
                     engine_->getCurrentState()->getName().c_str(),
-                    user_input_handler.getUserInput().toString().c_str());
+                    user_input_handler_.getUserInput().toString().c_str());
     engine_->process();
-    user_input_handler.clearUserInput();
+    user_input_handler_.clearUserInput();
 
     loop_rate.sleep();
   }
@@ -52,18 +52,16 @@ void ArmmsAT1XControl::initializeServices_()
   ros::service::waitForService("/armms_rpi/set_rgb_led");
   ros::service::waitForService("/armms_rpi/set_motor_power");
   ros::service::waitForService("/armms_rpi/shutdown_rpi");
+  ros::service::waitForService("/armms_driver/reset_controller");
   set_led_color_srv_ = nh_.serviceClient<armms_msgs::SetLedColor>("/armms_rpi/set_rgb_led");
   set_motor_power_srv_ = nh_.serviceClient<armms_msgs::SetMotorPower>("/armms_rpi/set_motor_power");
   shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
+  reset_controller_srv_ = nh_.serviceClient<std_srvs::Empty>("/armms_driver/reset_controller");
 }
 
 void ArmmsAT1XControl::initializeSubscribers_()
 {
-  ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/switch_limit");
-  ros::topic::waitForMessage<std_msgs::Bool>("/armms_rpi/motor_power");
   joint_state_sub_ = nh_.subscribe("/joint_states", 1, &ArmmsAT1XControl::callbackJointStates_, this);
-  switch_limit_sub_ = nh_.subscribe("/armms_rpi/switch_limit", 1, &ArmmsAT1XControl::callbackSwitchLimit_, this);
-  motor_power_sub_ = nh_.subscribe("/armms_rpi/motor_power", 1, &ArmmsAT1XControl::callbackMotorPower_, this);
 }
 
 void ArmmsAT1XControl::initializePublishers_()
@@ -73,7 +71,7 @@ void ArmmsAT1XControl::initializePublishers_()
 
 void ArmmsAT1XControl::retrieveParameters_()
 {
-  ros::param::get("~sampling_frequency", sampling_frequency_);
+  ros::param::get("~armms_control_rate", loop_rate_);
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
 }
 
@@ -185,7 +183,7 @@ void ArmmsAT1XControl::positionControlUpdate_()
     return;
   }
 
-  if (user_input_handler.resetJointStateRequest())
+  if (user_input_handler_.resetJointStateRequest())
   {
     refresh_joint_state_ = true;
   }
@@ -199,23 +197,39 @@ void ArmmsAT1XControl::positionControlUpdate_()
     return;
   }
 
-  double input_velocity_cmd = user_input_handler.getVelocityCommand();
-
-  limit_handler.adaptVelocityNearLimits(input_velocity_cmd);
+  double input_velocity_cmd = user_input_handler_.getVelocityCommand();
+  limit_handler_.adaptVelocityNearLimits(input_velocity_cmd);
 
   ROS_DEBUG_NAMED("ArmmsAT1XControl", "input_velocity_cmd : %f", input_velocity_cmd);
 
   /* Speed integration to retrieve position command */
   cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
-  limit_handler.saturatePosition(cmd_.data);
-  limit_handler.publishLimits();
-  position_command_pub_.publish(cmd_);
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "Computed position command is : %f", cmd_.data);
+
+  limit_handler_.saturatePosition(cmd_.data);
+  limit_handler_.publishLimits();
+
+  /* This detect falling edge of user command and force controller to reset */
+  if (input_velocity_cmd == 0)
+  {
+    if (input_velocity_cmd_ != 0.0)
+    {
+      std_srvs::Empty dummy;
+      reset_controller_srv_.call(dummy);
+    }
+  }
+  else
+  {
+    position_command_pub_.publish(cmd_);
+  }
+  input_velocity_cmd_ = input_velocity_cmd;
 }
 
 void ArmmsAT1XControl::errorProcessingEnter_()
 {
   setLedColor_(255, 0, 0, 10);  // red + bling 100ms
-  ROS_WARN_NAMED("ArmmsAT1XControl", "Error detected (status_ : %d | switch_limit_ : %d)", status_, switch_limit_);
+  ROS_WARN_NAMED("ArmmsAT1XControl", "Error detected (status : %d | switch_limit : %d)", status_,
+                 user_input_handler_.getSwitchLimit());
   status_ = stopMotor_();
 }
 
@@ -226,12 +240,13 @@ void ArmmsAT1XControl::errorProcessingUpdate_()
 void ArmmsAT1XControl::finalizedEnter_()
 {
   ROS_WARN_NAMED("ArmmsAT1XControl", "Control state machine enters in FINALIZED state...");
+  status_ = stopMotor_();
   setLedColor_(255, 0, 0, 0);  // red
-  shutdown_();
 }
 
 void ArmmsAT1XControl::finalizedUpdate_()
 {
+  shutdown_();
 }
 
 /******** FSM Transition definition ********/
@@ -243,22 +258,22 @@ bool ArmmsAT1XControl::trInitialized_()
 bool ArmmsAT1XControl::trErrorRaised_()
 {
   /* Raise error if limit switch or error are present */
-  return (switch_limit_ || status_ != OK);
+  return (user_input_handler_.getSwitchLimit() || status_ != OK);
 }
 
 bool ArmmsAT1XControl::trToPositionControl_()
 {
-  return ((user_input_handler.getUserInput() == FsmInputEvent::ButtonShortPress));
+  return ((user_input_handler_.getUserInput() == FsmInputEvent::ButtonShortPress));
 }
 
 bool ArmmsAT1XControl::trFinalize_()
 {
-  return (user_input_handler.getUserInput() == FsmInputEvent::ButtonLongPress);
+  return (user_input_handler_.getUserInput() == FsmInputEvent::ButtonLongPress);
 }
 
 bool ArmmsAT1XControl::trErrorSuccess_()
 {
-  return (!switch_limit_ && status_ == OK);
+  return (!user_input_handler_.getSwitchLimit() && status_ == OK);
 }
 
 bool ArmmsAT1XControl::trErrorCritical_()
@@ -269,7 +284,7 @@ bool ArmmsAT1XControl::trErrorCritical_()
 
 bool ArmmsAT1XControl::trStop_()
 {
-  return (user_input_handler.getUserInput() == FsmInputEvent::ButtonShortPress);
+  return (user_input_handler_.getUserInput() == FsmInputEvent::ButtonShortPress);
 }
 
 /*******************************************/
@@ -278,16 +293,6 @@ void ArmmsAT1XControl::callbackJointStates_(const sensor_msgs::JointStatePtr& ms
 {
   joint_position_time_ = ros::Time(msg->header.stamp);
   joint_position_ = msg->position[0];
-}
-
-void ArmmsAT1XControl::callbackSwitchLimit_(const std_msgs::BoolPtr& msg)
-{
-  switch_limit_ = msg->data;
-}
-
-void ArmmsAT1XControl::callbackMotorPower_(const std_msgs::BoolPtr& msg)
-{
-  motor_power_ = msg->data;
 }
 
 /*******************************************/
@@ -299,7 +304,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::startMotor_()
   if (!set_motor_power_srv_.call(msgPower))
   {
     ROS_ERROR_NAMED("ArmmsAT1XControl", "Problem occured during power enable.");
-    /* TODO handle error here */
     return ERROR;
   }
   return OK;
@@ -312,7 +316,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::stopMotor_()
   if (!set_motor_power_srv_.call(msgPower))
   {
     ROS_ERROR_NAMED("ArmmsAT1XControl", "Problem occured during power disable.");
-    /* TODO handle error here */
     return ERROR;
   }
   return OK;
@@ -329,7 +332,6 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, 
   if (!set_led_color_srv_.call(msgColor))
   {
     ROS_ERROR_NAMED("ArmmsAT1XControl", "Problem when calling set led color service");
-    /* TODO handle error here */
     return ERROR;
   }
   return OK;

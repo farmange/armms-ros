@@ -12,32 +12,23 @@ namespace armms_rpi
 ArmmsMotorPower::ArmmsMotorPower(const ros::NodeHandle& nh) : nh_(nh)
 {
   retrieveParameters_();
-  initializePublishers_();
   initializeServices_();
   motor_power_state_ = 0;
 
   pinMode(motor_power_pin_, OUTPUT);
 }
 
-void ArmmsMotorPower::update()
+ArmmsMotorPower::~ArmmsMotorPower()
+{
+  /* Stop motor power */
+  digitalWrite(motor_power_pin_, 0);
+}
+
+void ArmmsMotorPower::update(bool& motor_power)
 {
   /* Low side commutation and normally closed contact*/
   digitalWrite(motor_power_pin_, motor_power_state_);
-  std_msgs::Bool msg;
-  if (motor_power_state_ != 0)
-  {
-    msg.data = true;
-  }
-  else
-  {
-    msg.data = false;
-  }
-  motor_power_pub_.publish(msg);
-}
-
-void ArmmsMotorPower::initializePublishers_()
-{
-  motor_power_pub_ = nh_.advertise<std_msgs::Bool>("/armms_rpi/motor_power", 1);
+  motor_power = motor_power_state_;
 }
 
 void ArmmsMotorPower::initializeServices_()

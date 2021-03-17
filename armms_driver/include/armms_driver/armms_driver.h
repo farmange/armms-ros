@@ -15,8 +15,10 @@
 // #include <string>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 #include <thread>
 #include <controller_manager/controller_manager.h>
+#include <std_srvs/Empty.h>
 
 #include "armms_driver/armms_api.h"
 #include "armms_driver/armms_hardware_interface.h"
@@ -40,9 +42,23 @@ private:
   boost::shared_ptr<ros::Rate> ros_control_loop_rate;
   boost::shared_ptr<std::thread> ros_control_thread;
 
+  boost::mutex flag_reset_request_mtx_;
+  bool flag_request_ctrl_;
+
+  // boost::mut
   ros::NodeHandle nh_;
 
-  bool flag_reset_controllers;
+  ros::ServiceClient shutdown_srv_;
+  ros::ServiceServer reset_controller_service_;
+  bool flag_reset_controllers_;
+  double ros_control_frequency_;
+  bool api_logging_;
+  std::string device_;
+
+  void initializeServices_();
+  void retrieveParameters_();
+  bool callbackResetController_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool getResetRequest_();
 };
 
 }  // namespace armms_driver

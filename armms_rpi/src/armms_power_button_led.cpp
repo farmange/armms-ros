@@ -142,7 +142,6 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
       if (!button_event_srv_.call(msgButton))
       {
         ROS_ERROR_NAMED("ArmmsPowerButtonLed", "Problem when raising button event");
-        /* TODO handle error here */
       }
     }
   }

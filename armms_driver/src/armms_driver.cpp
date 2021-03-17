@@ -12,14 +12,16 @@ namespace armms_driver
 {
 ArmmsDriver::ArmmsDriver()
 {
-  double ros_control_frequency;
-  bool api_logging = false;
-  std::string device = "";
-  ros::param::get("~ros_control_loop_frequency", ros_control_frequency);
-  ros::param::get("~api_logging", api_logging);
-  ros::param::get("~device", device);
+  retrieveParameters_();
+  initializeServices_();
 
-  ros::ServiceClient shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
+  if (ros_control_frequency_ < 0)
+  {
+    ROS_ERROR("Sampling frequency could not be lower or equal to zero : %f", ros_control_frequency_);
+    ros::shutdown();
+    return;
+  }
+
   ros::Duration max_waiting_time = ros::Duration(4.0);
   ros::Duration elapsed_time = ros::Duration(0.0);
   ros::Time init_time = ros::Time::now();
@@ -29,16 +31,16 @@ ArmmsDriver::ArmmsDriver()
   }
   if (!shutdown_srv_.exists())
   {
-    ROS_INFO("Cannot get raspberry pi handle to shutdown properly");
+    ROS_ERROR("Cannot get raspberry pi handle to shutdown properly");
     ros::shutdown();
     return;
   }
 
-  ROS_INFO("Starting ARMMS driver thread (frequency : %fHz)", ros_control_frequency);
+  ROS_INFO("Starting ARMMS driver thread (frequency : %fHz)", ros_control_frequency_);
 
   comm.reset(new armms::ArmmsAPI());
 
-  int init_result = comm->init(device, api_logging);
+  int init_result = comm->init(device_, api_logging_);
 
   if (init_result != 0)
   {
@@ -52,7 +54,7 @@ ArmmsDriver::ArmmsDriver()
   ROS_INFO("ARMMS communication has been successfully started");
 
   ros::Duration(0.1).sleep();
-  flag_reset_controllers = true;
+  flag_reset_controllers_ = true;
 
   ROS_INFO("Start hardware control loop");
   ros::Duration(0.5).sleep();
@@ -69,14 +71,12 @@ ArmmsDriver::ArmmsDriver()
   ros::Duration(0.1).sleep();
 
   ROS_INFO("Starting ros control thread...");
-  ros_control_loop_rate.reset(new ros::Rate(ros_control_frequency));
+  ros_control_loop_rate.reset(new ros::Rate(ros_control_frequency_));
   ros_control_thread.reset(new std::thread(boost::bind(&ArmmsDriver::rosControlLoop, this)));
 }
 
 void ArmmsDriver::rosControlLoop()
 {
-  ROS_INFO_NAMED("ArmmsDriver", "rosControlLoop");
-
   ros::Time last_time = ros::Time::now();
   ros::Time current_time = ros::Time::now();
   ros::Duration elapsed_time;
@@ -85,7 +85,12 @@ void ArmmsDriver::rosControlLoop()
   {
     if (robot->getStatus() != ArmmsHardwareInterface::OK)
     {
-      flag_reset_controllers = true;
+      flag_reset_controllers_ = true;
+    }
+
+    if (getResetRequest_())
+    {
+      flag_reset_controllers_ = true;
     }
 
     robot->read();
@@ -94,13 +99,13 @@ void ArmmsDriver::rosControlLoop()
     elapsed_time = ros::Duration(current_time - last_time);
     last_time = current_time;
 
-    if (flag_reset_controllers)
+    if (flag_reset_controllers_)
     {
       ROS_DEBUG("Reset controller...");
       robot->setCommandToCurrentPosition();
       robot->resetLimit();
       cm->update(ros::Time::now(), elapsed_time, true);
-      flag_reset_controllers = false;
+      flag_reset_controllers_ = false;
     }
     else
     {
@@ -112,6 +117,40 @@ void ArmmsDriver::rosControlLoop()
 
     ros_control_loop_rate->sleep();
   }
+}
+
+void ArmmsDriver::initializeServices_()
+{
+  shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
+  reset_controller_service_ =
+      nh_.advertiseService("/armms_driver/reset_controller", &ArmmsDriver::callbackResetController_, this);
+}
+
+void ArmmsDriver::retrieveParameters_()
+{
+  ros_control_frequency_ = 0;
+  api_logging_ = false;
+  device_ = "";
+  ros::param::get("~ros_control_loop_frequency", ros_control_frequency_);
+  ros::param::get("~api_logging", api_logging_);
+  ros::param::get("~device", device_);
+}
+
+bool ArmmsDriver::callbackResetController_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
+{
+  flag_reset_request_mtx_.lock();
+  flag_request_ctrl_ = true;
+  flag_reset_request_mtx_.unlock();
+  return true;
+}
+
+bool ArmmsDriver::getResetRequest_()
+{
+  flag_reset_request_mtx_.lock();
+  bool flag_copy = flag_request_ctrl_;
+  flag_request_ctrl_ = false;
+  flag_reset_request_mtx_.unlock();
+  return flag_copy;
 }
 
 }  // namespace armms_driver

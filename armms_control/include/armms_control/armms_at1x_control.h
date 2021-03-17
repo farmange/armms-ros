@@ -36,34 +36,25 @@ public:
   ArmmsAT1XControl();
 
 private:
-  ArmmsLimits limit_handler;
-  ArmmsUserInput user_input_handler;
+  ArmmsLimits limit_handler_;
+  ArmmsUserInput user_input_handler_;
   ros::NodeHandle nh_;
   ros::ServiceClient set_led_color_srv_;
   ros::ServiceClient set_motor_power_srv_;
   ros::ServiceClient shutdown_srv_;
-
+  ros::ServiceClient reset_controller_srv_;
   ros::Publisher position_command_pub_;
-
   ros::Subscriber joint_state_sub_;
-  ros::Subscriber user_btn_down_sub_;
-  ros::Subscriber user_btn_up_sub_;
-  ros::Subscriber switch_limit_sub_;
-  ros::Subscriber motor_power_sub_;
   bool refresh_joint_state_;
   double joint_max_speed_;
   double reduced_speed_divisor_;
+  double input_velocity_cmd_;
   std_msgs::Float64 cmd_;
   ros::Timer non_realtime_loop_;
-  int sampling_frequency_;
+  int loop_rate_;
   double sampling_period_;
   double joint_position_;
   ros::Time joint_position_time_;
-
-  bool user_btn_down_;
-  bool user_btn_up_;
-  bool switch_limit_;
-  bool motor_power_;
 
   /* FSM engine */
   Engine<ArmmsAT1XControl>* engine_;
@@ -118,8 +109,6 @@ private:
   void initializePublishers_();
 
   void callbackJointStates_(const sensor_msgs::JointStatePtr& msg);
-  void callbackSwitchLimit_(const std_msgs::BoolPtr& msg);
-  void callbackMotorPower_(const std_msgs::BoolPtr& msg);
 
   status_t startMotor_();
   status_t stopMotor_();

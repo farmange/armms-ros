@@ -75,7 +75,7 @@ void ArmmsHardwareInterface::read()
   }
   else
   {
-    ROS_WARN("Cannot read actuator position !");
+    ROS_DEBUG("Cannot read actuator position !");
     if (read_error_count_ < 10)
     {
       read_error_count_++;
@@ -108,7 +108,7 @@ void ArmmsHardwareInterface::write()
   }
   else
   {
-    ROS_WARN("Cannot write actuator position command %f !", joint_position_command_[0]);
+    ROS_DEBUG("Cannot write actuator position command %f !", joint_position_command_[0]);
     status_ = WRITE_ERROR;
     return;
   }

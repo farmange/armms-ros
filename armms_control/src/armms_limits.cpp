@@ -122,12 +122,12 @@ void ArmmsLimits::initializeLimits_()
 
 void ArmmsLimits::setUpperLimit_(const float upper_limit_value)
 {
-  upper_limit_.data = joint_position_;
+  upper_limit_.data = upper_limit_value;
 }
 
 void ArmmsLimits::setLowerLimit_(const float lower_limit_value)
 {
-  lower_limit_.data = joint_position_;
+  lower_limit_.data = lower_limit_value;
 }
 
 bool ArmmsLimits::callbackSetUpperLimit_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)
@@ -158,7 +158,6 @@ bool ArmmsLimits::callbackEnableUpperLimit_(std_srvs::SetBool::Request& req, std
 {
   enable_upper_limit_ = req.data;
   res.success = true;
-  res.message = "Upper limit correctly enabled";
   return true;
 }
 
@@ -166,7 +165,6 @@ bool ArmmsLimits::callbackEnableLowerLimit_(std_srvs::SetBool::Request& req, std
 {
   enable_lower_limit_ = req.data;
   res.success = true;
-  res.message = "Lower limit correctly enabled";
   return true;
 }
 }  // namespace armms_control

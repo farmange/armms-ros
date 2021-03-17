@@ -16,6 +16,7 @@
 
 #include "armms_rpi/armms_switch_limit.h"
 #include "armms_rpi/armms_power_button_led.h"
+#include "armms_rpi/armms_diagnostics.h"
 #include "armms_rpi/armms_user_button.h"
 #include "armms_rpi/armms_motor_power.h"
 #include "armms_rpi/armms_shutdown_manager.h"
@@ -29,16 +30,19 @@ public:
 
 private:
   ros::NodeHandle nh_;
+  ros::Publisher rpi_interface_pub_;
   boost::shared_ptr<ArmmsPowerButtonLed> power_button_led_;
   boost::shared_ptr<ArmmsUserButton> user_button_;
   boost::shared_ptr<ArmmsMotorPower> motor_power_;
   boost::shared_ptr<ArmmsSwitchLimit> switch_limit_;
   boost::shared_ptr<ArmmsShutdownManager> shutdown_manager_;
+  boost::shared_ptr<ArmmsDiagnostics> rpi_diagnostics_;
 
-  int loop_rate_;
-  ros::Timer non_realtime_loop_;
+  int rpi_loop_rate_;
+  ros::Timer rpi_non_rt_loop_;
 
   void retrieveParameters_();
+  void initializePublishers_();
   void update_(const ros::TimerEvent&);
 };
 

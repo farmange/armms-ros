@@ -15,10 +15,6 @@
       <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
   </node>
 
-  <node name="armms_rpi_diag_node" pkg="armms_rpi" type="armms_rpi_diagnostics" output="screen">
-      <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
-  </node>
-
   <node name="armms_at1x_control_node" pkg="armms_control" type="armms_at1x_control" output="screen">
       <rosparam file="$(find armms_control)/launch/config/at1x_control_settings.yaml" /> 
   </node>
@@ -27,7 +23,9 @@
       <rosparam file="$(find armms_bringup)/launch/config/recorded_topics.yaml"/>
       <param name="prefix" value="robot"/>
       <param name="append_date" value="true"/>
-      <param name="compression" value="bz2"/>
+      <param name="quiet" value="true"/>
+      <param name="verbose" value="false"/>
+      <param name="compression" value="lz4"/>
     </node>
 
 </launch>

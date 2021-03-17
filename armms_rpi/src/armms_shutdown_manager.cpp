@@ -14,10 +14,19 @@ ArmmsShutdownManager::ArmmsShutdownManager(const ros::NodeHandle& nh) : nh_(nh)
   initializeServices_();
 }
 
+void ArmmsShutdownManager::shutdown()
+{
+  system_thread_.reset(new std::thread(boost::bind(&ArmmsShutdownManager::shutdownThread_, this)));
+}
+
+void ArmmsShutdownManager::reboot()
+{
+  system_thread_.reset(new std::thread(boost::bind(&ArmmsShutdownManager::rebootThread_, this)));
+}
+
 void ArmmsShutdownManager::shutdownThread_()
 {
   ROS_INFO("Execute shutdown thread...");
-  std::system("killall -9 rosmaster");
   /* The following command requires that execution access was grant to the user
    * (with systemd only primary group is defined at startup).
    */
@@ -27,7 +36,6 @@ void ArmmsShutdownManager::shutdownThread_()
 void ArmmsShutdownManager::rebootThread_()
 {
   ROS_INFO("Execute reboot thread...");
-  std::system("killall -9 rosmaster");
   /* The following command requires that execution access was grant to the user
    * (with systemd only primary group is defined at startup).
    */
@@ -43,11 +51,11 @@ bool ArmmsShutdownManager::callbackShutdown_(armms_msgs::SetInt::Request& req, a
 {
   if (req.value == 1)
   {
-    shutdown_thread_.reset(new std::thread(boost::bind(&ArmmsShutdownManager::shutdownThread_, this)));
+    shutdown();
   }
   else if (req.value == 2)
   {
-    shutdown_thread_.reset(new std::thread(boost::bind(&ArmmsShutdownManager::rebootThread_, this)));
+    reboot();
   }
   else
   {

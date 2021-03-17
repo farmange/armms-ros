@@ -5,20 +5,28 @@
 // Copyright   : LGPLv3
 //============================================================================
 
-#include "armms_rpi/armms_rpi.h"
-#include <signal.h>
-
 #include <ros/callback_queue.h>
 #include <ros/callback_queue.h>
 #include <ros/spinner.h>
-// // Signal-safe flag for whether shutdown is requested
-sig_atomic_t volatile g_request_shutdown = 0;
+
+#include <fstream>
+
+#include "armms_rpi/armms_rpi.h"
+#include "armms_msgs/RpiInterface.h"
+
 namespace armms_rpi
 {
 ArmmsRpi::ArmmsRpi()
 {
-  loop_rate_ = 0;
+  rpi_loop_rate_ = 0;
   retrieveParameters_();
+  initializePublishers_();
+
+  if (rpi_loop_rate_ <= 0)
+  {
+    ROS_ERROR("Bad sampling frequency value (%d) for RPI thread", rpi_loop_rate_);
+    return;
+  }
 
   if (wiringPiSetup() == -1)
   {
@@ -36,30 +44,44 @@ ArmmsRpi::ArmmsRpi()
   switch_limit_.reset(new ArmmsSwitchLimit(nh_));
   ROS_INFO("Create shutdown manager");
   shutdown_manager_.reset(new ArmmsShutdownManager(nh_));
+  ROS_INFO("Create diagnostic thread");
+  rpi_diagnostics_.reset(new ArmmsDiagnostics(nh_));
 
-  if (loop_rate_ <= 0)
-  {
-    ROS_ERROR("Bad sampling frequency value (%d)", loop_rate_);
-    return;
-  }
-
-  ros::Duration update_time = ros::Duration(1.0 / loop_rate_);
-  non_realtime_loop_ = nh_.createTimer(update_time, &ArmmsRpi::update_, this);
+  ros::Duration rpi_update_time = ros::Duration(1.0 / rpi_loop_rate_);
+  rpi_non_rt_loop_ = nh_.createTimer(rpi_update_time, &ArmmsRpi::update_, this);
 
   ros::spin();
 }
 
 void ArmmsRpi::retrieveParameters_()
 {
-  ros::param::get("~rpi_loop_rate", loop_rate_);
+  ros::param::get("~rpi_loop_rate", rpi_loop_rate_);
+}
+
+void ArmmsRpi::initializePublishers_()
+{
+  rpi_interface_pub_ = nh_.advertise<armms_msgs::RpiInterface>("/armms_rpi/rpi_interface", 1);
 }
 
 void ArmmsRpi::update_(const ros::TimerEvent&)
 {
+  bool motor_power;
+  bool switch_limit;
+  bool user_button_up;
+  bool user_button_down;
+
   power_button_led_->update();
-  user_button_->update();
-  motor_power_->update();
-  switch_limit_->update();
+  user_button_->update(user_button_up, user_button_down);
+  motor_power_->update(motor_power);
+  switch_limit_->update(switch_limit);
+
+  armms_msgs::RpiInterface msg;
+  msg.motor_power = motor_power;
+  msg.switch_limit = switch_limit;
+  msg.user_button_up = user_button_up;
+  msg.user_button_down = user_button_down;
+  msg.rpi_temperature = rpi_diagnostics_->getCpuTemperature();
+  rpi_interface_pub_.publish(msg);
 }
 }  // namespace armms_rpi
 

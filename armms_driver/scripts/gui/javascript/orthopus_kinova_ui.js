@@ -3,8 +3,7 @@ var upper_limit_sub;
 var lower_limit_sub;
 var vel_setpoint_sub;
 
-var gui_up_pub;
-var gui_down_pub;
+var web_interface_pub;
 var spd_setpoint_pub;
 
 var set_zero_torque_srv;
@@ -44,17 +43,12 @@ function UpdatePage() {
 }
 
 function publishMessage() {
-  /* publish up button state */
-  var msg1 = new ROSLIB.Message({
-    data: up_btn_cmd,
+  /* publish up and down button state */
+  var msg = new ROSLIB.Message({
+    user_button_up: up_btn_cmd,
+    user_button_down: down_btn_cmd
   });
-  gui_up_pub.publish(msg1);
-
-  /* publish down button state */
-  var msg2 = new ROSLIB.Message({
-    data: down_btn_cmd,
-  });
-  gui_down_pub.publish(msg2);
+  web_interface_pub.publish(msg);
 }
 
 
@@ -211,16 +205,10 @@ window.onload = function () {
   });
   // Setup topic publishers 
   // ----------------------
-  gui_up_pub = new ROSLIB.Topic({
+  web_interface_pub = new ROSLIB.Topic({
     ros: ros,
-    name: '/armms_webgui/user_button_up',
-    messageType: 'std_msgs/Float64'
-  });
-
-  gui_down_pub = new ROSLIB.Topic({
-    ros: ros,
-    name: '/armms_webgui/user_button_down',
-    messageType: 'std_msgs/Float64'
+    name: '/armms_web/web_interface',
+    messageType: 'armms_msgs/WebInterface'
   });
 
   // Setup service 

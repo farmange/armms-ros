@@ -32,6 +32,7 @@ include_directories(
 add_executable(${PROJECT_NAME}
   src/armms_rpi.cpp
   src/armms_switch_limit.cpp
+  src/armms_diagnostics.cpp
   src/armms_power_button_led.cpp
   src/armms_user_button.cpp
   src/armms_motor_power.cpp
@@ -63,12 +64,12 @@ add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
 
-# ARMMS rpi diagnostics node
-add_executable(${PROJECT_NAME}_diagnostics
-  src/armms_rpi_diagnostics.cpp
-)
-target_link_libraries(${PROJECT_NAME}_diagnostics  ${catkin_LIBRARIES})
-add_dependencies(${PROJECT_NAME}_diagnostics ${catkin_EXPORTED_TARGETS})
+# # ARMMS rpi diagnostics node
+# add_executable(${PROJECT_NAME}_diagnostics
+#   src/armms_rpi_diagnostics.cpp
+# )
+# target_link_libraries(${PROJECT_NAME}_diagnostics  ${catkin_LIBRARIES})
+# add_dependencies(${PROJECT_NAME}_diagnostics ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

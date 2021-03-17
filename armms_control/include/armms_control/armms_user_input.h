@@ -15,6 +15,8 @@
 #include "std_msgs/Float64.h"
 #include "armms_msgs/ButtonEvent.h"
 #include "armms_msgs/SetVelocitySetpoint.h"
+#include "armms_msgs/RpiInterface.h"
+#include "armms_msgs/WebInterface.h"
 
 #include "armms_control/armms_user_input.h"
 #include "armms_control/at1x_fsm.h"
@@ -28,19 +30,16 @@ public:
   FsmInputEvent getUserInput();
   double getVelocityCommand();
   bool resetJointStateRequest();
+  bool getSwitchLimit();
   void processUserInput();
   void clearUserInput();
 
 private:
   ros::NodeHandle nh_;
-
   ros::ServiceServer pwr_btn_ev_service_;
   ros::ServiceServer setpoint_service_;
-
-  ros::Subscriber user_btn_down_sub_;
-  ros::Subscriber user_btn_up_sub_;
-  ros::Subscriber webgui_btn_down_sub_;
-  ros::Subscriber webgui_btn_up_sub_;
+  ros::Subscriber rpi_interface_sub_;
+  ros::Subscriber web_interface_sub_;
   ros::Publisher setpoint_velocity_pub_;
 
   bool refresh_joint_state_;
@@ -54,18 +53,15 @@ private:
   bool user_btn_up_;
   bool webgui_btn_down_;
   bool webgui_btn_up_;
-
+  bool switch_limit_;
   FsmInputEvent input_event_requested_;
 
   void retrieveParameters_();
   void initializeServices_();
   void initializeSubscribers_();
   void initializePublishers_();
-  void callbackUserBtnDown_(const std_msgs::BoolPtr& msg);
-  void callbackUserBtnUp_(const std_msgs::BoolPtr& msg);
-  void callbackWebguiBtnDown_(const std_msgs::BoolPtr& msg);
-  void callbackWebguiBtnUp_(const std_msgs::BoolPtr& msg);
-
+  void callbackRpiInterface_(const armms_msgs::RpiInterfacePtr& msg);
+  void callbackWebInterface_(const armms_msgs::WebInterfacePtr& msg);
   void callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg);
 
   bool callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request& req, armms_msgs::ButtonEvent::Response& res);
