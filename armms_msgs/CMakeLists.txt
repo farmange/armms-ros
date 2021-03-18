@@ -18,9 +18,11 @@ add_message_files(
 add_service_files(
   FILES
   ButtonEvent.srv
+  SetFloat.srv
   SetInt.srv
   SetLedColor.srv
   SetMotorPower.srv
+  SetTorqueMean.srv
   SetVelocitySetpoint.srv
 )
 
