@@ -31,15 +31,17 @@ public:
   //   int initializeKinovaAPIFunctions(KinovaAPIType connection_type);
   int loadLibrary(const char* kinova_comm_lib);
   int initializeActuator(float& jointPositionOptical);
-  
+
   int clearError();
   int startMotorControl();
   int stopMotorControl();
-  
-  int setPositionCommandExt(const float& jointCommand, float& jointPositionOptical, float& jointTorque);
-  int setPositionCommand(const float& jointCommand, float& jointPositionOptical, float& jointTorque);
-  int getJointStatesSetCommand(const float& jointCommand, float& jointPositionOptical, float& jointSpeed,
-                               float& jointTorque);
+
+  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                            float& jointTorque, float& jointPMW, float& jointPositionOptical, short& jointAccelX,
+                            short& jointAccelY, short& jointAccelZ, short& jointTemp);
+  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                         float& jointTorque);
+  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed, float& jointTorque);
 
 private:
   ros::NodeHandle nh_;

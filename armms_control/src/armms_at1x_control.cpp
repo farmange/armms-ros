@@ -293,6 +293,7 @@ void ArmmsAT1XControl::callbackJointStates_(const sensor_msgs::JointStatePtr& ms
 {
   joint_position_time_ = ros::Time(msg->header.stamp);
   joint_position_ = msg->position[0];
+  joint_torque_ = msg->effort[0];
 }
 
 /*******************************************/

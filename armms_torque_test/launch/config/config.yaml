@@ -1,0 +1,5 @@
+alpha_slow_ema               : 0.01 
+alpha_fast_ema               : 0.02
+threshold_high               : 1.75   
+threshold_low                : 1.5   
+user_mean_torque             : -1.2 #-0.8

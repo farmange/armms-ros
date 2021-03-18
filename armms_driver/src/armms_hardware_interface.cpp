@@ -65,12 +65,19 @@ void ArmmsHardwareInterface::setCommandToCurrentPosition()
 
 void ArmmsHardwareInterface::read()
 {
-  float pos = 0;
-
-  if (comm_->initializeActuator(pos) == 0)
+  float jointCurrent = 0;
+  float jointPositionHall = 0;
+  float jointSpeed = 0;
+  float jointTorque = 0;
+  // if (comm_->initializeActuator(pos) == 0)
+  if (comm_->getActualPosition(jointCurrent, jointPositionHall, jointSpeed, jointTorque) == 0)
   {
-    ROS_DEBUG("Read actuator position: %f", pos);
-    joint_position_[0] = pos;
+    ROS_DEBUG("Read actuator state pos: %f | vel: %f | tor: %f | cur: %f", jointPositionHall, jointSpeed, jointTorque,
+              jointCurrent);
+    joint_position_[0] = jointPositionHall;
+    joint_effort_[0] = jointTorque;
+    joint_velocity_[0] = jointCurrent;
+    joint_velocity_[0] = jointSpeed;
     read_error_count_ = 0;
   }
   else
@@ -98,13 +105,26 @@ void ArmmsHardwareInterface::resetLimit()
 
 void ArmmsHardwareInterface::write()
 {
-  float pos = 0, torque = 0;
+  float jointCommand = joint_position_command_[0];
+  float jointCurrent = 0;
+  float jointPositionHall = 0;
+  float jointSpeed = 0;
+  float jointTorque = 0;
+  float jointPMW = 0;
+  float jointPositionOptical = 0;
+  short jointAccelX = 0;
+  short jointAccelY = 0;
+  short jointAccelZ = 0;
+  short jointTemp = 0;
 
-  if (comm_->setPositionCommandExt(joint_position_command_[0], pos, torque) == 0)
+  if (comm_->setPositionCommandExt(jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque, jointPMW,
+                                   jointPositionOptical, jointAccelX, jointAccelY, jointAccelZ, jointTemp) == 0)
+  // if (comm_->setPositionCommand(jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque) == 0)
   {
     ROS_DEBUG("Write actuator position command: %f", joint_position_command_[0]);
-    joint_position_[0] = pos;
-    joint_effort_[0] = torque;
+    // joint_position_[0] = jointPositionHall;
+    // joint_effort_[0] = jointTorque;
+    // joint_velocity_[0] = jointSpeed;
   }
   else
   {

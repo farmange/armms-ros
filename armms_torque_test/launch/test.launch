@@ -1,0 +1,5 @@
+<launch>
+    <node name="armms_torque_test_node" pkg="armms_torque_test" type="user_intent_test.py" output="screen">
+      <rosparam file="$(find armms_torque_test)/launch/config/config.yaml" /> 
+    </node>
+</launch>

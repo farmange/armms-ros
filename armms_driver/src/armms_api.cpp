@@ -65,18 +65,10 @@ int ArmmsAPI::loadLibrary(const char* comm_lib)
 }
 
 // TODO documentation
-int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointPositionOptical, float& jointTorque)
+int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
+                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp)
 {
-  float jointCurrent = 0.0;
-  float jointPositionHall = 0.0;
-  float jointSpeed = 0.0;
-  // float jointTorque = 0.0;
-  float jointPMW = 0.0;
-  // float jointPositionOptical = 0.0;
-  short jointAccelX = 0;
-  short jointAccelY = 0;
-  short jointAccelZ = 0;
-  short jointTemp = 0;
   APILayer::ApiStatus_t status =
       driver_->setCommandAllValue(jointAddress_, jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque,
                                   jointPMW, jointPositionOptical, jointAccelX, jointAccelY, jointAccelZ, jointTemp);
@@ -88,11 +80,9 @@ int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointPosit
 }
 
 // TODO documentation
-int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointPositionOptical, float& jointTorque)
+int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                 float& jointSpeed, float& jointTorque)
 {
-  float jointCurrent = 0.0;
-  float jointPositionHall = 0.0;
-  float jointSpeed = 0.0;
   APILayer::ApiStatus_t status = driver_->setPositionCommand(jointAddress_, jointCommand, jointCurrent,
                                                              jointPositionHall, jointSpeed, jointTorque);
   if (status == APILayer::API_OK)
@@ -151,24 +141,10 @@ int ArmmsAPI::stopMotorControl()
 }
 
 // TODO documentation
-int ArmmsAPI::getJointStatesSetCommand(const float& jointCommand, float& jointPositionOptical, float& jointSpeed,
-                                       float& jointTorque)
+int ArmmsAPI::getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed, float& jointTorque)
 {
-  // float jointCommand = 0.0;
-  float jointCurrent = 0.0;
-  float jointPositionHall = 0.0;
-  // float jointSpeed = 0.0;
-  // float jointTorque = 0.0;
-  float jointPMW = 0.0;
-  // float jointPositionOptical = 0.0;
-  short jointAccelX = 0;
-  short jointAccelY = 0;
-  short jointAccelZ = 0;
-  short jointTemp = 0;
-
-  APILayer::ApiStatus_t status =
-      driver_->setCommandAllValue(jointAddress_, jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque,
-                                  jointPMW, jointPositionOptical, jointAccelX, jointAccelY, jointAccelZ, jointTemp);
+  APILayer::ApiStatus_t status;
+  status = driver_->getActualPosition(jointAddress_, jointCurrent, jointPositionHall, jointSpeed, jointTorque);
   if (status == APILayer::API_OK)
   {
     return 0;

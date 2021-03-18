@@ -163,6 +163,7 @@ double ArmmsUserInput::getVelocityCommand()
 {
   return velocity_command_;
 }
+
 bool ArmmsUserInput::getSwitchLimit()
 {
   return switch_limit_;

@@ -54,6 +54,7 @@ private:
   int loop_rate_;
   double sampling_period_;
   double joint_position_;
+  double joint_torque_;
   ros::Time joint_position_time_;
 
   /* FSM engine */
