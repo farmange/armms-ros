@@ -1,2 +1,2 @@
-uint8 button_event # 1 Short press, 2 long press
+uint8 button_event # 1 short press, 2 double short press, 3 long press
 ---

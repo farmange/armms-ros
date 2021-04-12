@@ -9,7 +9,8 @@
       <param name="robot_description" textfile="$(find armms_description)/urdf/at1x.urdf"/> 
   </group>
 -->
-  <include file="$(find armms_driver)/launch/at1x_controller.launch" />
+  <arg name="mock_hw" default="false" />
+  <include file="$(find armms_driver)/launch/at1x_controller.launch" pass_all_args="true" />
 
   <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
       <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 

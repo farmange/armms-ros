@@ -15,4 +15,4 @@ motor_power_pin             : 12
 
 # duration of a long press on power button
 long_press_duration         : 4.0
-
+inactivity_duration         : 0.8

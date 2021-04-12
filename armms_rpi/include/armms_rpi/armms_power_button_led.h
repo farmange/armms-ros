@@ -43,11 +43,15 @@ private:
   {
     BTN_NONE = 0,
     BTN_SHORT_PRESS,
+    BTN_SHORT_DOUBLE_PRESS,
     BTN_LONG_PRESS
   } button_action_t;
   button_action_t button_action_;
   ros::Duration long_press_duration_;
+  ros::Duration inactivity_duration_;
   ros::Time press_time_;
+  ros::Time release_time_;
+  int press_counter_;
 
   /* Input pins */
   int power_btn_pin_;

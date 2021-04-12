@@ -1,10 +1,11 @@
 <launch>
+    <arg name="mock_hw" default="false" />
     <rosparam file="$(find armms_driver)/launch/config/hardware.yaml" command="load"/>
     <rosparam file="$(find armms_driver)/launch/config/controllers.yaml" command="load"/>
     <rosparam file="$(find armms_driver)/launch/config/joint_limits.yaml" command="load"/>
 
-
     <node name="armms_driver_node" pkg="armms_driver" type="armms_driver" output="screen">
+        <param name="fake_communication" type="bool" value="$(arg mock_hw)" />
         <rosparam file="$(find armms_driver)/launch/config/armms_driver.yaml" /> 
     </node>
 

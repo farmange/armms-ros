@@ -38,7 +38,17 @@ ArmmsDriver::ArmmsDriver()
 
   ROS_INFO("Starting ARMMS driver thread (frequency : %fHz)", ros_control_frequency_);
 
-  comm.reset(new armms::ArmmsAPI());
+  /* TODO Clean here */
+  bool fake_communication;
+  ros::param::get("~fake_communication", fake_communication);
+  if (fake_communication)
+  {
+    comm.reset(new ArmmsFakeComm());
+  }
+  else
+  {
+    comm.reset(new ArmmsKinovaComm());
+  }
 
   int init_result = comm->init(device_, api_logging_);
 
@@ -53,11 +63,8 @@ ArmmsDriver::ArmmsDriver()
   }
   ROS_INFO("ARMMS communication has been successfully started");
 
-  ros::Duration(0.1).sleep();
-  flag_reset_controllers_ = true;
-
-  ROS_INFO("Start hardware control loop");
   ros::Duration(0.5).sleep();
+  flag_reset_controllers_ = true;
 
   ROS_INFO("Start hardware interface");
   robot.reset(new ArmmsHardwareInterface(comm.get()));

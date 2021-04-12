@@ -18,6 +18,7 @@ ArmmsPowerButtonLed::ArmmsPowerButtonLed(const ros::NodeHandle& nh) : nh_(nh)
   led_blink_counter_ = 0;
   led_blink_state_ = true;
 
+  press_counter_ = 0;
   /* Led is initialized in red color */
   setLedColor(255, 0, 0, 0);
 
@@ -136,7 +137,23 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
     if (power_btn_prev_state_ == 1)
     {
       /* short press detected */
-      button_action_ = BTN_SHORT_PRESS;
+      press_counter_++;
+      release_time_ = ros::Time::now();
+    }
+    if (press_counter_ > 0)
+    {
+      /* After a specified inactivity delay, raise button event according to number of press detected */
+      if (ros::Duration(ros::Time::now() - release_time_) > inactivity_duration_)
+      {
+        if (press_counter_ = 1)
+        {
+          button_action_ = BTN_SHORT_PRESS;
+        }
+        else if (press_counter_ = 2)
+        {
+          button_action_ = BTN_SHORT_DOUBLE_PRESS;
+        }
+      }
     }
   }
 
@@ -167,6 +184,8 @@ void ArmmsPowerButtonLed::retrieveParameters_()
   double duration;
   ros::param::get("~long_press_duration", duration);
   long_press_duration_ = ros::Duration(duration);
+  ros::param::get("~inactivity_duration", duration);
+  inactivity_duration_ = ros::Duration(duration);
 }
 
 void ArmmsPowerButtonLed::initializeServices_()

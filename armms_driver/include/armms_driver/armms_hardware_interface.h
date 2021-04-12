@@ -11,13 +11,11 @@
 #include <controller_manager/controller_manager.h>
 #include <boost/scoped_ptr.hpp>
 #include <ros/ros.h>
-#include <mutex>  // std::mutex
-
+#include <mutex>
 #include "std_srvs/Empty.h"
 
-// #include <ROBOTcpp/ROBOT.h>
 #include "armms_driver/armms_hardware.h"
-#include "armms_driver/armms_api.h"
+#include "armms_driver/comm/armms_kinova_comm.h"
 
 using namespace hardware_interface;
 using joint_limits_interface::JointLimits;
@@ -60,6 +58,6 @@ private:
   PositionJointSoftLimitsInterface positionJointSoftLimitsInterface;
 };
 
-}  // namespace armms_hardware_interface
+}  // namespace armms_driver
 
 #endif

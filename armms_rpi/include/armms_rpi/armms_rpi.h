@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : armms_api.h
+// Name        : armms_rpi.h
 // Author      : Florian Armange, ORTHOPUS
 // Version     : 0.0
 // Copyright   : LGPLv3

@@ -33,7 +33,9 @@ include_directories(
 add_executable(armms_driver
 src/nodes/armms_driver_node.cpp
 src/armms_driver.cpp
-src/armms_api.cpp
+src/comm/armms_base_comm.cpp
+src/comm/armms_fake_comm.cpp
+src/comm/armms_kinova_comm.cpp
 src/armms_hardware_interface.cpp
 src/armms_bag_recorder.cpp
 )

@@ -20,7 +20,9 @@
 #include <controller_manager/controller_manager.h>
 #include <std_srvs/Empty.h>
 
-#include "armms_driver/armms_api.h"
+#include "armms_driver/comm/armms_base_comm.h"
+#include "armms_driver/comm/armms_fake_comm.h"
+#include "armms_driver/comm/armms_kinova_comm.h"
 #include "armms_driver/armms_hardware_interface.h"
 #include "armms_driver/armms_bag_recorder.h"
 
@@ -33,7 +35,7 @@ public:
   void rosControlLoop();
 
 private:
-  boost::shared_ptr<armms::ArmmsAPI> comm;
+  boost::shared_ptr<ArmmsBaseComm> comm;
   boost::shared_ptr<ArmmsHardwareInterface> robot;
   boost::shared_ptr<ArmmsBagRecorder> recorder;
   boost::shared_ptr<controller_manager::ControllerManager> cm;

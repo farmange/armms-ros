@@ -1,24 +1,24 @@
 //============================================================================
-// Name        : armms_api.cpp
+// Name        : armms_kinova_comm.cpp
 // Author      : Florian Armange, ORTHOPUS
 // Version     : 0.0
 // Copyright   : LGPLv3
 //============================================================================
 
-#include "armms_driver/armms_api.h"
+#include "armms_driver/comm/armms_kinova_comm.h"
 #include "kinovadrv/kinovadrv.h"
 
 using namespace KinovaApi;
 
-namespace armms
+namespace armms_driver
 {
-ArmmsAPI::ArmmsAPI()
+ArmmsKinovaComm::ArmmsKinovaComm()
 {
 }
 
-int ArmmsAPI::init(const std::string device, const bool& debug_log)
+int ArmmsKinovaComm::init(const std::string device, const bool& debug_log)
 {
-  if (loadLibrary("libkinovadrv.so") != 0)
+  if (loadLibrary_("libkinovadrv.so") != 0)
   {
     ROS_FATAL("Failed to load library libkinovadrv.so !");
     return 1;
@@ -41,7 +41,7 @@ int ArmmsAPI::init(const std::string device, const bool& debug_log)
 }
 
 // returns 0 if robot connection sucessful
-int ArmmsAPI::loadLibrary(const char* comm_lib)
+int ArmmsKinovaComm::loadLibrary_(const char* comm_lib)
 {
   void* driver_command_lib = dlopen(comm_lib, RTLD_NOW);
   if (driver_command_lib == NULL)
@@ -65,9 +65,10 @@ int ArmmsAPI::loadLibrary(const char* comm_lib)
 }
 
 // TODO documentation
-int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
-                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
-                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp)
+int ArmmsKinovaComm::setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                           float& jointSpeed, float& jointTorque, float& jointPMW,
+                                           float& jointPositionOptical, short& jointAccelX, short& jointAccelY,
+                                           short& jointAccelZ, short& jointTemp)
 {
   APILayer::ApiStatus_t status =
       driver_->setCommandAllValue(jointAddress_, jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque,
@@ -80,8 +81,8 @@ int ArmmsAPI::setPositionCommandExt(const float& jointCommand, float& jointCurre
 }
 
 // TODO documentation
-int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
-                                 float& jointSpeed, float& jointTorque)
+int ArmmsKinovaComm::setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                        float& jointSpeed, float& jointTorque)
 {
   APILayer::ApiStatus_t status = driver_->setPositionCommand(jointAddress_, jointCommand, jointCurrent,
                                                              jointPositionHall, jointSpeed, jointTorque);
@@ -92,7 +93,7 @@ int ArmmsAPI::setPositionCommand(const float& jointCommand, float& jointCurrent,
   return 1;
 }
 
-int ArmmsAPI::initializeActuator(float& jointPositionOptical)
+int ArmmsKinovaComm::initializeActuator(float& jointPositionOptical)
 {
   APILayer::ApiStatus_t status;
   status = driver_->deviceInitialisation(jointAddress_, jointPositionOptical);
@@ -104,7 +105,7 @@ int ArmmsAPI::initializeActuator(float& jointPositionOptical)
   return 1;
 }
 
-int ArmmsAPI::clearError()
+int ArmmsKinovaComm::clearError()
 {
   APILayer::ApiStatus_t status;
   status = driver_->clearError(jointAddress_);
@@ -116,7 +117,7 @@ int ArmmsAPI::clearError()
   return 1;
 }
 
-int ArmmsAPI::startMotorControl()
+int ArmmsKinovaComm::startMotorControl()
 {
   APILayer::ApiStatus_t status;
   status = driver_->startMotorControl(jointAddress_);
@@ -128,7 +129,7 @@ int ArmmsAPI::startMotorControl()
   return 1;
 }
 
-int ArmmsAPI::stopMotorControl()
+int ArmmsKinovaComm::stopMotorControl()
 {
   APILayer::ApiStatus_t status;
   status = driver_->stopMotorControl(jointAddress_);
@@ -141,7 +142,8 @@ int ArmmsAPI::stopMotorControl()
 }
 
 // TODO documentation
-int ArmmsAPI::getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed, float& jointTorque)
+int ArmmsKinovaComm::getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                                       float& jointTorque)
 {
   APILayer::ApiStatus_t status;
   status = driver_->getActualPosition(jointAddress_, jointCurrent, jointPositionHall, jointSpeed, jointTorque);
@@ -151,4 +153,4 @@ int ArmmsAPI::getActualPosition(float& jointCurrent, float& jointPositionHall, f
   }
   return 1;
 }
-}  // namespace armms
+}  // namespace armms_driver
