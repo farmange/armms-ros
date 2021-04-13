@@ -9,6 +9,8 @@
 
 # Compiled Dynamic libraries
 *.so
+*.so.0
+*.so.0.0.1
 *.dylib
 
 # Compiled Static libraries
