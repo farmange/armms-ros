@@ -17,24 +17,28 @@ namespace armms_driver
 class ArmmsBaseComm
 {
 public:
-  ArmmsBaseComm();
-  int init(const std::string device, const bool& debug_log = false) = 0;
+  // virtual ~ArmmsBaseComm() = 0;
 
-  int initializeActuator(float& jointPositionOptical) = 0;
+  virtual int init(const std::string device, const bool& debug_log = false) = 0;
 
-  int clearError() = 0;
-  int startMotorControl() = 0;
-  int stopMotorControl() = 0;
+  virtual int initializeActuator(float& jointPositionOptical) = 0;
 
-  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
-                            float& jointTorque, float& jointPMW, float& jointPositionOptical, short& jointAccelX,
-                            short& jointAccelY, short& jointAccelZ, short& jointTemp) = 0;
-  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
-                         float& jointTorque) = 0;
-  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed, float& jointTorque) = 0;
+  // TODO could be remove
+  virtual int clearError() = 0;
+  virtual int startMotorControl() = 0;
+  virtual int stopMotorControl() = 0;
+
+  virtual int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
+                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp) = 0;
+  virtual int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                 float& jointSpeed, float& jointTorque) = 0;
+  virtual int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                                float& jointTorque) = 0;
 
 private:
   ros::NodeHandle nh_;
+protected:
   uint16_t jointAddress_;
 };
 

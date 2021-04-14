@@ -21,6 +21,7 @@
 #include "armms_msgs/SetLedColor.h"
 #include "armms_msgs/SetMotorPower.h"
 #include "armms_msgs/ButtonEvent.h"
+#include "armms_msgs/UserIntentCalib.h"
 
 #include "armms_control/armms_limits.h"
 #include "armms_control/armms_user_input.h"
@@ -43,12 +44,14 @@ private:
   ros::ServiceClient set_motor_power_srv_;
   ros::ServiceClient shutdown_srv_;
   ros::ServiceClient reset_controller_srv_;
+  ros::ServiceClient user_intent_calib_srv_;
+  
   ros::Publisher position_command_pub_;
   ros::Subscriber joint_state_sub_;
   bool refresh_joint_state_;
   double joint_max_speed_;
   double reduced_speed_divisor_;
-  double input_velocity_cmd_;
+  double velocity_cmd_;
   std_msgs::Float64 cmd_;
   ros::Timer non_realtime_loop_;
   int loop_rate_;
@@ -64,6 +67,8 @@ private:
   State<ArmmsAT1XControl>* state_uninitialized_;
   State<ArmmsAT1XControl>* state_stopped_;
   State<ArmmsAT1XControl>* state_position_control_;
+  State<ArmmsAT1XControl>* state_intent_control_;
+  State<ArmmsAT1XControl>* state_intent_calibration_;
   State<ArmmsAT1XControl>* state_error_processing_;
   State<ArmmsAT1XControl>* state_finalized_;
 
@@ -71,6 +76,9 @@ private:
   Transition<ArmmsAT1XControl>* tr_initialized_;
   Transition<ArmmsAT1XControl>* tr_error_raised_;
   Transition<ArmmsAT1XControl>* tr_to_position_control_;
+  Transition<ArmmsAT1XControl>* tr_to_intent_control_;
+  Transition<ArmmsAT1XControl>* tr_to_intent_calibration_;
+  Transition<ArmmsAT1XControl>* tr_exit_intent_calibration_;
   Transition<ArmmsAT1XControl>* tr_finalize_;
   Transition<ArmmsAT1XControl>* tr_error_success_;
   Transition<ArmmsAT1XControl>* tr_error_critical_;
@@ -79,6 +87,10 @@ private:
   bool trInitialized_();
   bool trErrorRaised_();
   bool trToPositionControl_();
+  bool trToIntentControl_();
+  bool trToIntentCalibration_();
+  bool trExitIntentCalibration_();
+  
   bool trFinalize_();
   bool trErrorSuccess_();
   bool trErrorCritical_();
@@ -89,6 +101,9 @@ private:
   void stoppedEnter_();
   void positionControlEnter_();
   void positionControlUpdate_();
+  void intentCalibrationEnter_();
+  void intentControlEnter_();
+  void intentControlUpdate_();
   void errorProcessingEnter_();
   void errorProcessingUpdate_();
   void finalizedEnter_();
@@ -111,9 +126,12 @@ private:
 
   void callbackJointStates_(const sensor_msgs::JointStatePtr& msg);
 
+  status_t velocityControl_(const double& velocity_cmd);
   status_t startMotor_();
   status_t stopMotor_();
-  status_t setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed);
+  status_t userIntentCalib_();
+
+  status_t setLedColor_(const uint8_t& r, const uint8_t& g, const uint8_t& b, const uint8_t& blink_speed);
   status_t shutdown_();
 };
 

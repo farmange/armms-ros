@@ -17,7 +17,7 @@ ArmmsPowerButtonLed::ArmmsPowerButtonLed(const ros::NodeHandle& nh) : nh_(nh)
   led_blink_speed_ = 0;
   led_blink_counter_ = 0;
   led_blink_state_ = true;
-
+  long_press_detected_ = false;
   press_counter_ = 0;
   /* Led is initialized in red color */
   setLedColor(255, 0, 0, 0);
@@ -129,6 +129,7 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
       /* Long press detected */
       button_action_ = BTN_LONG_PRESS;
       press_time_ = ros::Time::now();
+      long_press_detected_ = true;
     }
   }
   else
@@ -136,22 +137,35 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
     /* Falling edge detected */
     if (power_btn_prev_state_ == 1)
     {
-      /* short press detected */
-      press_counter_++;
-      release_time_ = ros::Time::now();
+      if(long_press_detected_ != true)
+      {
+        /* short press detected */
+        press_counter_++;
+        release_time_ = ros::Time::now();
+      }
+      else
+      {
+        /* If falling edge of a long press : do not take into account this event */
+        long_press_detected_ = false;
+      }
     }
     if (press_counter_ > 0)
     {
       /* After a specified inactivity delay, raise button event according to number of press detected */
       if (ros::Duration(ros::Time::now() - release_time_) > inactivity_duration_)
       {
-        if (press_counter_ = 1)
+        if (press_counter_ == 1)
         {
           button_action_ = BTN_SHORT_PRESS;
         }
-        else if (press_counter_ = 2)
+        else if (press_counter_ == 2)
         {
           button_action_ = BTN_SHORT_DOUBLE_PRESS;
+        }
+        else
+        {
+          button_action_ = BTN_NONE;
+          press_counter_ = 0;
         }
       }
     }
@@ -160,6 +174,7 @@ void ArmmsPowerButtonLed::processPowerButtonInput_()
   /* Only send service request if an event is detected */
   if (button_action_ != BTN_NONE)
   {
+    press_counter_ = 0;
     if (button_event_srv_.exists())
     {
       armms_msgs::ButtonEvent msgButton;

@@ -11,6 +11,7 @@
 #define ARMMS_DRIVER_ARMMS_FAKE_COMM_H
 
 #include <ros/ros.h>
+#include <armms_driver/comm/armms_base_comm.h>
 
 namespace armms_driver
 {
@@ -18,6 +19,25 @@ class ArmmsFakeComm : public ArmmsBaseComm
 {
 public:
   ArmmsFakeComm();
+
+  int init(const std::string device, const bool& debug_log = false);
+  int initializeActuator(float& jointPositionOptical);
+  // TODO could be remove
+  int clearError();
+  int startMotorControl();
+  int stopMotorControl();
+
+  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
+                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp);
+  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                 float& jointSpeed, float& jointTorque);
+  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                                float& jointTorque);
+private:
+  double torque_;
+  double position_;
+  double omega_t_;
 };
 
 }  // namespace armms_driver

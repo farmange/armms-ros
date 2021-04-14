@@ -5,9 +5,9 @@ import numpy as np
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
 from std_msgs.msg import Int32
-from armms_msgs.srv import SetTorqueMean
+from armms_msgs.srv import UserIntentCalib
 from armms_msgs.srv import SetFloat
-from armms_msgs.msg import WebInterface
+from armms_msgs.msg import IntentInterface
 
 class NodeTest:
     def __init__(self):
@@ -29,18 +29,18 @@ class NodeTest:
         self.joint_states_sub = rospy.Subscriber(
             '/joint_states', JointState, self.callback_joint_states)
     
-        self.mean_torque_pub = rospy.Publisher('~mean_torque', Float32, queue_size=1)
-        self.threshold_hi_pub = rospy.Publisher('~threshold_hi', Float32, queue_size=1)
-        self.threshold_lo_pub = rospy.Publisher('~threshold_lo', Float32, queue_size=1)
-        self.fast_ema_pub = rospy.Publisher('~fast_ema', Float32, queue_size=1)
-        self.slow_ema_pub = rospy.Publisher('~slow_ema', Float32, queue_size=1)
-        self.delta_ema_pub = rospy.Publisher('~delta_ema', Float32, queue_size=1)
-        self.cmd_pub = rospy.Publisher('~cmd_pub', Int32, queue_size=1)
-        self.web_pub = rospy.Publisher('/armms_web/web_interface', WebInterface, queue_size=1)
+        self.mean_torque_pub = rospy.Publisher('/armms_user_intent/mean_torque', Float32, queue_size=1)
+        self.threshold_hi_pub = rospy.Publisher('/armms_user_intent/threshold_hi', Float32, queue_size=1)
+        self.threshold_lo_pub = rospy.Publisher('/armms_user_intent/threshold_lo', Float32, queue_size=1)
+        self.fast_ema_pub = rospy.Publisher('/armms_user_intent/fast_ema', Float32, queue_size=1)
+        self.slow_ema_pub = rospy.Publisher('/armms_user_intent/slow_ema', Float32, queue_size=1)
+        self.delta_ema_pub = rospy.Publisher('/armms_user_intent/delta_ema', Float32, queue_size=1)
+        self.cmd_pub = rospy.Publisher('/armms_user_intent/cmd_pub', Int32, queue_size=1)
+        self.intent_pub = rospy.Publisher('/armms_user_intent/intent_interface', IntentInterface, queue_size=1)
 
-        self.set_torque_mean_service = rospy.Service('~set_torque_mean', SetTorqueMean, self.set_torque_mean)
-        self.set_thresh_lo_service = rospy.Service('~set_thresh_lo', SetFloat, self.set_thresh_lo)
-        self.set_thresh_hi_service = rospy.Service('~set_thresh_hi', SetFloat, self.set_thresh_hi)
+        self.set_torque_mean_service = rospy.Service('/armms_user_intent/calibrate', UserIntentCalib, self.set_torque_mean)
+        self.set_thresh_lo_service = rospy.Service('/armms_user_intent/set_thresh_lo', SetFloat, self.set_thresh_lo)
+        self.set_thresh_hi_service = rospy.Service('/armms_user_intent/set_thresh_hi', SetFloat, self.set_thresh_hi)
 
         rospy.Timer(rospy.Duration(1.0 / 100), self.publish_cmd)
 
@@ -48,7 +48,6 @@ class NodeTest:
         return (alpha*data) + ((1-alpha) * current_value)
 
     def publish_cmd(self, event):
-        rospy.loginfo('publish_cmd')
         if(self.ema_init == False):
             return
         # Compute EMA torque filtering 
@@ -70,22 +69,22 @@ class NodeTest:
 
         cmd_msg = Int32()
         cmd_msg.data = self.computed_cmd
-        web_msg = WebInterface()
+        intent_msg = IntentInterface()
         if self.computed_cmd == 0:
-            web_msg.user_button_up = False
-            web_msg.user_button_down = False
+            intent_msg.user_button_up = False
+            intent_msg.user_button_down = False
         elif self.computed_cmd == -1:
-            web_msg.user_button_up = True
-            web_msg.user_button_down = False
+            intent_msg.user_button_up = True
+            intent_msg.user_button_down = False
         elif self.computed_cmd == 1:
-            web_msg.user_button_up = False
-            web_msg.user_button_down = True
+            intent_msg.user_button_up = False
+            intent_msg.user_button_down = True
 
         # Publish computed command (0 or +1 or -1)
         self.cmd_pub.publish(cmd_msg)
 
-        # Publish actuator control command (Mock the web gui interface)
-        self.web_pub.publish(web_msg)
+        # Publish actuator control command 
+        self.intent_pub.publish(intent_msg)
 
         msg = Float32()
         # Publish fast EMA torque filtering 
@@ -117,8 +116,8 @@ class NodeTest:
         self.position = msg.position[0]
         self.torque = msg.effort[0]
         if(self.ema_init == False):
-            self.fast_ema = self.position
-            self.slow_ema = self.position
+            self.fast_ema = self.torque
+            self.slow_ema = self.torque
             self.ema_init = True
 
     def set_torque_mean(self, req):
@@ -126,6 +125,7 @@ class NodeTest:
             self.user_mean_torque = self.fast_ema
         else:
             self.user_mean_torque = req.value
+        self.ema_init == False
         return []
 
     def set_thresh_lo(self, req):
@@ -138,6 +138,6 @@ class NodeTest:
         
         
 if __name__ == '__main__':
-    rospy.init_node('armms_torque_test')
+    rospy.init_node('armms_user_intent')
     NodeTest()
     rospy.spin()

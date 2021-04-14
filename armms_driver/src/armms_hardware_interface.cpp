@@ -10,7 +10,7 @@ using joint_limits_interface::SoftJointLimits;
 
 namespace armms_driver
 {
-ArmmsHardwareInterface::ArmmsHardwareInterface(armms::ArmmsAPI* comm) : comm_(comm)
+ArmmsHardwareInterface::ArmmsHardwareInterface(ArmmsBaseComm* comm) : comm_(comm)
 {
   ROS_INFO("Starting ARMMS Hardware Interface...");
   status_ = OK;

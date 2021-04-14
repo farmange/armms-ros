@@ -40,6 +40,7 @@ void ArmmsUserInput::initializeSubscribers_()
 
   rpi_interface_sub_ = nh_.subscribe("/armms_rpi/rpi_interface", 1, &ArmmsUserInput::callbackRpiInterface_, this);
   web_interface_sub_ = nh_.subscribe("/armms_web/web_interface", 1, &ArmmsUserInput::callbackWebInterface_, this);
+  intent_interface_sub_ = nh_.subscribe("/armms_user_intent/intent_interface", 1, &ArmmsUserInput::callbackIntentInterface_, this);
 }
 
 void ArmmsUserInput::initializePublishers_()
@@ -89,6 +90,24 @@ void ArmmsUserInput::callbackWebInterface_(const armms_msgs::WebInterfacePtr& ms
   webgui_btn_up_ = msg->user_button_up;
 }
 
+
+void ArmmsUserInput::callbackIntentInterface_(const armms_msgs::IntentInterfacePtr& msg)
+{
+  /* Detect rising edge of the down button to reset local joint position */
+  if (!intent_btn_down_ && msg->user_button_down)
+  {
+    refresh_joint_state_ = true;
+  }
+  intent_btn_down_ = msg->user_button_down;
+
+  /* Detect rising edge of the up button to reset local joint position */
+  if (!intent_btn_up_ && msg->user_button_up)
+  {
+    refresh_joint_state_ = true;
+  }
+  intent_btn_up_ = msg->user_button_up;
+}
+
 void ArmmsUserInput::callbackVelocitySetpoint_(const std_msgs::Float64Ptr& msg)
 {
   joint_setpoint_velocity_ = msg->data;
@@ -107,6 +126,11 @@ bool ArmmsUserInput::callbackPowerButtonEvent_(armms_msgs::ButtonEvent::Request&
     input_event_requested_ = FsmInputEvent::ButtonShortPress;
   }
   else if (req.button_event == 2)
+  {
+    /* Short double press */
+    input_event_requested_ = FsmInputEvent::ButtonShortDoublePress;
+  }
+  else if (req.button_event == 3)
   {
     /* Long press */
     input_event_requested_ = FsmInputEvent::ButtonLongPress;
@@ -152,6 +176,9 @@ void ArmmsUserInput::init_()
   user_btn_up_ = false;
   webgui_btn_down_ = false;
   webgui_btn_up_ = false;
+  intent_btn_down_ = false;
+  intent_btn_up_ = false;
+  user_intent_enabled_ = false;
 }
 
 FsmInputEvent ArmmsUserInput::getUserInput()
@@ -208,6 +235,30 @@ void ArmmsUserInput::processUserInput()
     velocity_command_ = -joint_setpoint_velocity_;
     ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from webgui down button : %f", velocity_command_);
   }
+  else if (user_intent_enabled_)
+  {
+    if (intent_btn_up_ && intent_btn_down_)
+    {
+      /* do nothing */
+      velocity_command_ = 0.0;
+      ROS_DEBUG_NAMED("ArmmsUserInput", "Conflicting user intent up and down button pressed at the same time !");
+    }
+    else if (intent_btn_up_)
+    {
+      velocity_command_ = +joint_setpoint_velocity_;
+      ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from user intent up button : %f", velocity_command_);
+    }
+    else if (intent_btn_down_)
+    {
+      velocity_command_ = -joint_setpoint_velocity_;
+      ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from user intent down button : %f", velocity_command_);
+    }
+    else
+    {
+      velocity_command_ = 0.0;
+      ROS_DEBUG_NAMED("ArmmsUserInput", "no velocity command received !");
+    }
+  }
   else
   {
     velocity_command_ = 0.0;
@@ -225,5 +276,17 @@ void ArmmsUserInput::clearUserInput()
   refresh_joint_state_ = false;
   input_event_requested_ = FsmInputEvent::None;
 }
+
+
+void ArmmsUserInput::enableUserIntent()
+{
+  user_intent_enabled_ = true;
+}
+
+void ArmmsUserInput::disableUserIntent()
+{
+  user_intent_enabled_ = false;
+}
+
 
 }  // namespace armms_control

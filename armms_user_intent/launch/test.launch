@@ -1,0 +1,5 @@
+<launch>
+    <node name="armms_user_intent_node" pkg="armms_user_intent" type="armms_user_intent.py" output="screen">
+      <rosparam file="$(find armms_user_intent)/launch/config/config.yaml" /> 
+    </node>
+</launch>

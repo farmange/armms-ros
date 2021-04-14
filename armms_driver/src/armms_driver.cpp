@@ -38,10 +38,7 @@ ArmmsDriver::ArmmsDriver()
 
   ROS_INFO("Starting ARMMS driver thread (frequency : %fHz)", ros_control_frequency_);
 
-  /* TODO Clean here */
-  bool fake_communication;
-  ros::param::get("~fake_communication", fake_communication);
-  if (fake_communication)
+  if (fake_communication_)
   {
     comm.reset(new ArmmsFakeComm());
   }
@@ -138,9 +135,12 @@ void ArmmsDriver::retrieveParameters_()
   ros_control_frequency_ = 0;
   api_logging_ = false;
   device_ = "";
+  fake_communication_ = false;
   ros::param::get("~ros_control_loop_frequency", ros_control_frequency_);
   ros::param::get("~api_logging", api_logging_);
   ros::param::get("~device", device_);
+  ros::param::get("~fake_communication", fake_communication_);
+
 }
 
 bool ArmmsDriver::callbackResetController_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)

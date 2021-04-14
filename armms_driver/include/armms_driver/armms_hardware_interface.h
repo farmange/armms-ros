@@ -15,7 +15,7 @@
 #include "std_srvs/Empty.h"
 
 #include "armms_driver/armms_hardware.h"
-#include "armms_driver/comm/armms_kinova_comm.h"
+#include "armms_driver/comm/armms_base_comm.h"
 
 using namespace hardware_interface;
 using joint_limits_interface::JointLimits;
@@ -34,7 +34,7 @@ public:
     READ_ERROR,
     WRITE_ERROR
   } status_t;
-  ArmmsHardwareInterface(armms::ArmmsAPI* comm);
+  ArmmsHardwareInterface(ArmmsBaseComm* comm);
   ~ArmmsHardwareInterface();
   // void init();
   // void initPosition();
@@ -48,7 +48,7 @@ public:
 
 private:
   ros::NodeHandle nh_;
-  armms::ArmmsAPI* comm_;
+  ArmmsBaseComm* comm_;
   ros::ServiceServer start_control_service_;
   ros::ServiceServer stop_control_service_;
   status_t status_;

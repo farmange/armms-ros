@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>armms_torque_test</name>
+  <name>armms_user_intent</name>
   <version>0.0.1</version>
   <description>TODO</description>
   <author email="florian.armange@orthopus.com">Florian Armange (ORTHOPUS)</author>

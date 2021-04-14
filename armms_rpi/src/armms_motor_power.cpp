@@ -45,6 +45,8 @@ void ArmmsMotorPower::retrieveParameters_()
 bool ArmmsMotorPower::callbackSetMotorPower_(armms_msgs::SetMotorPower::Request& req,
                                              armms_msgs::SetMotorPower::Response& res)
 {
+  ROS_DEBUG_NAMED("ArmmsMotorPower", "callbackSetMotorPower_");
+
   if (req.power_state == 1)
   {
     motor_power_state_ = 1;

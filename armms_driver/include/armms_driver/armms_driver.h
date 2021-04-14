@@ -54,6 +54,7 @@ private:
   ros::ServiceServer reset_controller_service_;
   bool flag_reset_controllers_;
   double ros_control_frequency_;
+  bool fake_communication_;
   bool api_logging_;
   std::string device_;
 

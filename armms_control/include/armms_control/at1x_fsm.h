@@ -28,6 +28,7 @@ public:
   {
     None = 0,
     ButtonShortPress,
+    ButtonShortDoublePress,
     ButtonLongPress
   };
 
@@ -44,6 +45,9 @@ public:
       case ButtonShortPress:
         msg = "ButtonShortPress";
         break;
+      case ButtonShortDoublePress:
+        msg = "ButtonShortDoublePress";
+        break;
       case ButtonLongPress:
         msg = "ButtonLongPress";
         break;
@@ -56,6 +60,7 @@ public:
   FsmInputEvent& operator=(const FsmInputEventEnum e)
   {
     input_event_ = e;
+    return *this;
   }
   friend bool operator==(const FsmInputEvent& c, const FsmInputEventEnum& e)
   {

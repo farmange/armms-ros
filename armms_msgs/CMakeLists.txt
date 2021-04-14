@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
+  IntentInterface.msg
   RpiInterface.msg
   WebInterface.msg
 )
@@ -22,8 +23,9 @@ add_service_files(
   SetInt.srv
   SetLedColor.srv
   SetMotorPower.srv
-  SetTorqueMean.srv
-  SetVelocitySetpoint.srv
+  SetVelocitySetpoint.srv  
+  UserIntentCalib.srv
+
 )
 
 # add_action_files(DIRECTORY action

@@ -57,6 +57,7 @@ void ArmmsAT1XControl::initializeServices_()
   set_motor_power_srv_ = nh_.serviceClient<armms_msgs::SetMotorPower>("/armms_rpi/set_motor_power");
   shutdown_srv_ = nh_.serviceClient<armms_msgs::SetInt>("/armms_rpi/shutdown_rpi");
   reset_controller_srv_ = nh_.serviceClient<std_srvs::Empty>("/armms_driver/reset_controller");
+  user_intent_calib_srv_ = nh_.serviceClient<armms_msgs::UserIntentCalib>("/armms_user_intent/calibrate");
 }
 
 void ArmmsAT1XControl::initializeSubscribers_()
@@ -88,6 +89,13 @@ void ArmmsAT1XControl::initializeStateMachine_()
   state_position_control_->registerEnterFcn(&ArmmsAT1XControl::positionControlEnter_);
   state_position_control_->registerUpdateFcn(&ArmmsAT1XControl::positionControlUpdate_);
 
+  state_intent_control_ = new State<ArmmsAT1XControl>(this, "INTENT CONTROL");
+  state_intent_control_->registerEnterFcn(&ArmmsAT1XControl::intentControlEnter_);
+  state_intent_control_->registerUpdateFcn(&ArmmsAT1XControl::intentControlUpdate_);
+
+  state_intent_calibration_ = new State<ArmmsAT1XControl>(this, "INTENT CALIBRATION");
+  state_intent_calibration_->registerEnterFcn(&ArmmsAT1XControl::intentCalibrationEnter_);
+
   state_error_processing_ = new State<ArmmsAT1XControl>(this, "ERROR PROCESSING");
   state_error_processing_->registerEnterFcn(&ArmmsAT1XControl::errorProcessingEnter_);
   state_error_processing_->registerUpdateFcn(&ArmmsAT1XControl::errorProcessingUpdate_);
@@ -110,6 +118,18 @@ void ArmmsAT1XControl::initializeStateMachine_()
   tr_to_position_control_->registerConditionFcn(&ArmmsAT1XControl::trToPositionControl_);
   tr_to_position_control_->addInitialState(state_stopped_);
 
+  tr_to_intent_control_ = new Transition<ArmmsAT1XControl>(this, state_intent_control_);
+  tr_to_intent_control_->registerConditionFcn(&ArmmsAT1XControl::trToIntentControl_);
+  tr_to_intent_control_->addInitialState(state_position_control_);
+
+  tr_to_intent_calibration_ = new Transition<ArmmsAT1XControl>(this, state_intent_calibration_);
+  tr_to_intent_calibration_->registerConditionFcn(&ArmmsAT1XControl::trToIntentCalibration_);
+  tr_to_intent_calibration_->addInitialState(state_position_control_);
+
+  tr_exit_intent_calibration_ = new Transition<ArmmsAT1XControl>(this, state_position_control_);
+  tr_exit_intent_calibration_->registerConditionFcn(&ArmmsAT1XControl::trExitIntentCalibration_);
+  tr_exit_intent_calibration_->addInitialState(state_intent_calibration_);
+
   tr_finalize_ = new Transition<ArmmsAT1XControl>(this, state_finalized_);
   tr_finalize_->registerConditionFcn(&ArmmsAT1XControl::trFinalize_);
   tr_finalize_->addInitialState(state_stopped_);
@@ -126,19 +146,24 @@ void ArmmsAT1XControl::initializeStateMachine_()
 
   tr_stop_ = new Transition<ArmmsAT1XControl>(this, state_stopped_);
   tr_stop_->registerConditionFcn(&ArmmsAT1XControl::trStop_);
-  tr_stop_->addInitialState(state_position_control_);
+  tr_stop_->addInitialState(state_intent_control_);
 
   /* Engine definition */
   engine_ = new Engine<ArmmsAT1XControl>(this);
   engine_->registerState(state_uninitialized_);
   engine_->registerState(state_stopped_);
   engine_->registerState(state_position_control_);
+  engine_->registerState(state_intent_control_);
+  engine_->registerState(state_intent_calibration_);
   engine_->registerState(state_error_processing_);
   engine_->registerState(state_finalized_);
 
   engine_->registerTransition(tr_initialized_);
   engine_->registerTransition(tr_error_raised_);
   engine_->registerTransition(tr_to_position_control_);
+  engine_->registerTransition(tr_to_intent_control_);
+  engine_->registerTransition(tr_to_intent_calibration_);
+  engine_->registerTransition(tr_exit_intent_calibration_);
   engine_->registerTransition(tr_finalize_);
   engine_->registerTransition(tr_error_success_);
   engine_->registerTransition(tr_error_critical_);
@@ -165,6 +190,7 @@ void ArmmsAT1XControl::stoppedEnter_()
 void ArmmsAT1XControl::positionControlEnter_()
 {
   refresh_joint_state_ = true;
+  user_input_handler_.disableUserIntent();
   if (startMotor_() != OK)
   {
     status_ = ERROR;
@@ -174,60 +200,32 @@ void ArmmsAT1XControl::positionControlEnter_()
 
 void ArmmsAT1XControl::positionControlUpdate_()
 {
-  /* If no fresh position was received since 100ms, stop publishing new commands */
-  ros::Duration position_dt = ros::Duration(ros::Time::now() - joint_position_time_);
-  if (position_dt > ros::Duration(0.1))
-  {
-    refresh_joint_state_ = true;
-    ROS_WARN_NAMED("ArmmsAT1XControl", "No fresh position received :stall position control");
-    return;
-  }
-
-  if (user_input_handler_.resetJointStateRequest())
-  {
-    refresh_joint_state_ = true;
-  }
-
-  /* Ensure joint_position_ is up to date and refresh local copy (cmd_) */
-  if (refresh_joint_state_)
-  {
-    ROS_INFO_NAMED("ArmmsAT1XControl", "Refresh the joint position %f = %f : ", cmd_.data, joint_position_);
-    cmd_.data = joint_position_;
-    refresh_joint_state_ = false;
-    return;
-  }
-
   double input_velocity_cmd = user_input_handler_.getVelocityCommand();
-  limit_handler_.adaptVelocityNearLimits(input_velocity_cmd);
+  velocityControl_(input_velocity_cmd);
+}
 
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "input_velocity_cmd : %f", input_velocity_cmd);
+void ArmmsAT1XControl::intentCalibrationEnter_()
+{
+  setLedColor_(255, 0, 255, 0);  // blue + blink 50ms
+  userIntentCalib_();
+}
 
-  /* Speed integration to retrieve position command */
-  cmd_.data = cmd_.data + (input_velocity_cmd * sampling_period_);
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "Computed position command is : %f", cmd_.data);
+void ArmmsAT1XControl::intentControlEnter_()
+{
+  refresh_joint_state_ = true;
+  user_input_handler_.enableUserIntent();
+  setLedColor_(0, 0, 255, 0);  // blue 
+}
 
-  limit_handler_.saturatePosition(cmd_.data);
-  limit_handler_.publishLimits();
-
-  /* This detect falling edge of user command and force controller to reset */
-  if (input_velocity_cmd == 0)
-  {
-    if (input_velocity_cmd_ != 0.0)
-    {
-      std_srvs::Empty dummy;
-      reset_controller_srv_.call(dummy);
-    }
-  }
-  else
-  {
-    position_command_pub_.publish(cmd_);
-  }
-  input_velocity_cmd_ = input_velocity_cmd;
+void ArmmsAT1XControl::intentControlUpdate_()
+{
+  double input_velocity_cmd = user_input_handler_.getVelocityCommand();
+  velocityControl_(input_velocity_cmd);
 }
 
 void ArmmsAT1XControl::errorProcessingEnter_()
 {
-  setLedColor_(255, 0, 0, 10);  // red + bling 100ms
+  setLedColor_(255, 0, 0, 10);  // red + blink 100ms
   ROS_WARN_NAMED("ArmmsAT1XControl", "Error detected (status : %d | switch_limit : %d)", status_,
                  user_input_handler_.getSwitchLimit());
   status_ = stopMotor_();
@@ -266,6 +264,21 @@ bool ArmmsAT1XControl::trToPositionControl_()
   return ((user_input_handler_.getUserInput() == FsmInputEvent::ButtonShortPress));
 }
 
+bool ArmmsAT1XControl::trToIntentControl_()
+{
+  return ((user_input_handler_.getUserInput() == FsmInputEvent::ButtonShortPress));
+}
+
+bool ArmmsAT1XControl::trToIntentCalibration_()
+{
+  return ((user_input_handler_.getUserInput() == FsmInputEvent::ButtonShortDoublePress));
+}
+
+bool ArmmsAT1XControl::trExitIntentCalibration_()
+{
+  return true;
+}
+
 bool ArmmsAT1XControl::trFinalize_()
 {
   return (user_input_handler_.getUserInput() == FsmInputEvent::ButtonLongPress);
@@ -297,7 +310,59 @@ void ArmmsAT1XControl::callbackJointStates_(const sensor_msgs::JointStatePtr& ms
 }
 
 /*******************************************/
+ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velocity_cmd)
+{
+  /* If no fresh position was received since 100ms, stop publishing new commands */
+  ros::Duration position_dt = ros::Duration(ros::Time::now() - joint_position_time_);
+  if (position_dt > ros::Duration(0.1))
+  {
+    refresh_joint_state_ = true;
+    ROS_WARN_NAMED("ArmmsAT1XControl", "No fresh position received :stall position control");
+    return ERROR;
+  }
 
+  if (user_input_handler_.resetJointStateRequest())
+  {
+    refresh_joint_state_ = true;
+  }
+
+  /* Ensure joint_position_ is up to date and refresh local copy (cmd_) */
+  if (refresh_joint_state_)
+  {
+    ROS_INFO_NAMED("ArmmsAT1XControl", "Refresh the joint position %f = %f : ", cmd_.data, joint_position_);
+    cmd_.data = joint_position_;
+    refresh_joint_state_ = false;
+    return OK; // TODO should we exit here ?
+  }
+  double velocity_cmd_limited = velocity_cmd;
+  limit_handler_.adaptVelocityNearLimits(velocity_cmd_limited);
+
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "velocity_cmd_limited : %f", velocity_cmd_limited);
+
+  /* Speed integration to retrieve position command */
+  cmd_.data = cmd_.data + (velocity_cmd_limited * sampling_period_);
+  ROS_DEBUG_NAMED("ArmmsAT1XControl", "Computed position command is : %f", cmd_.data);
+
+  limit_handler_.saturatePosition(cmd_.data);
+  limit_handler_.publishLimits();
+
+  /* This detect falling edge of user command and force controller to reset */
+  if (velocity_cmd_limited == 0)
+  {
+    if (velocity_cmd_ != 0.0)
+    {
+      std_srvs::Empty dummy;
+      reset_controller_srv_.call(dummy);
+    }
+  }
+  else
+  {
+    position_command_pub_.publish(cmd_);
+  }
+  velocity_cmd_ = velocity_cmd_limited;
+
+  return OK;
+}
 ArmmsAT1XControl::status_t ArmmsAT1XControl::startMotor_()
 {
   armms_msgs::SetMotorPower msgPower;
@@ -322,7 +387,21 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::stopMotor_()
   return OK;
 }
 
-ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(uint8_t r, uint8_t g, uint8_t b, uint8_t blink_speed)
+ArmmsAT1XControl::status_t ArmmsAT1XControl::userIntentCalib_()
+{
+  armms_msgs::UserIntentCalib msgCalib;
+  msgCalib.request.value = 0.0;
+  msgCalib.request.current_torque = true;
+  if (!user_intent_calib_srv_.call(msgCalib))
+  {
+    ROS_ERROR_NAMED("ArmmsAT1XControl", "Problem occured during user intent calibration.");
+    return ERROR;
+  }
+  return OK;
+}
+
+ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(const uint8_t& r, const uint8_t& g, const uint8_t& b, const uint8_t& blink_speed)
+
 {
   armms_msgs::SetLedColor msgColor;
   msgColor.request.r = r;

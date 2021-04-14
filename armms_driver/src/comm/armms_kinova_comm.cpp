@@ -6,7 +6,6 @@
 //============================================================================
 
 #include "armms_driver/comm/armms_kinova_comm.h"
-#include "kinovadrv/kinovadrv.h"
 
 using namespace KinovaApi;
 
@@ -80,7 +79,6 @@ int ArmmsKinovaComm::setPositionCommandExt(const float& jointCommand, float& joi
   return 1;
 }
 
-// TODO documentation
 int ArmmsKinovaComm::setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
                                         float& jointSpeed, float& jointTorque)
 {
@@ -141,7 +139,6 @@ int ArmmsKinovaComm::stopMotorControl()
   return 1;
 }
 
-// TODO documentation
 int ArmmsKinovaComm::getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
                                        float& jointTorque)
 {

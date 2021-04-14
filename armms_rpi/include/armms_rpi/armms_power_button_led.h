@@ -39,6 +39,8 @@ private:
   uint8_t blue_led_state_;
   int power_btn_state_;
   int power_btn_prev_state_;
+  bool long_press_detected_;
+
   typedef enum button_action_e
   {
     BTN_NONE = 0,

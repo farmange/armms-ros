@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(armms_torque_test)
+project(armms_user_intent)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy

@@ -36,8 +36,6 @@ void ArmmsBagRecorder::stop()
 
 void ArmmsBagRecorder::initializeServices_()
 {
-  ros::service::waitForService("/armms_recorder/start");
-  ros::service::waitForService("/armms_recorder/stop");
   start_bag_rec_srv_ = nh_.serviceClient<std_srvs::Empty>("/armms_recorder/start");
   stop_bag_rec_srv_ = nh_.serviceClient<std_srvs::Empty>("/armms_recorder/stop");
 }

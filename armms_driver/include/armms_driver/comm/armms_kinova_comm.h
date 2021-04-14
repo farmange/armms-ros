@@ -12,6 +12,8 @@
 
 #include <dlfcn.h>
 #include <ros/ros.h>
+#include <armms_driver/comm/armms_base_comm.h>
+#include "kinovadrv/kinovadrv.h"
 
 namespace armms_driver
 {
@@ -19,11 +21,24 @@ class ArmmsKinovaComm : public ArmmsBaseComm
 {
 public:
   ArmmsKinovaComm();
+  int init(const std::string device, const bool& debug_log = false);
+  int initializeActuator(float& jointPositionOptical);
+  // TODO could be remove
+  int clearError();
+  int startMotorControl();
+  int stopMotorControl();
 
+  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
+                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp);
+  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
+                                 float& jointSpeed, float& jointTorque);
+  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                                float& jointTorque);
 private:
   KinovaApi::APILayer* driver_;
 
-  int loadLibrary_(const char* libname) = 0;
+  int loadLibrary_(const char* libname);
 };
 
 }  // namespace armms_driver

@@ -6,13 +6,15 @@
 //============================================================================
 
 #include "armms_driver/comm/armms_fake_comm.h"
-
-using namespace KinovaApi;
+#include <math.h>
 
 namespace armms_driver
 {
 ArmmsFakeComm::ArmmsFakeComm()
 {
+  omega_t_ = 0.0;
+  torque_ = -1.2;
+  position_ = 200.0;
 }
 
 int ArmmsFakeComm::init(const std::string device, const bool& debug_log)
@@ -26,21 +28,36 @@ int ArmmsFakeComm::setPositionCommandExt(const float& jointCommand, float& joint
                                          float& jointPositionOptical, short& jointAccelX, short& jointAccelY,
                                          short& jointAccelZ, short& jointTemp)
 {
-  jointPositionHall = 200.0;
-  jointPositionOptical = 200.0;
+  jointPositionHall = jointCommand;
+  torque_ = -1.2  + (2.* sin (omega_t_));
+  omega_t_ = omega_t_ + 0.01;
+  if(omega_t_ > (3.14*2))
+  {
+    omega_t_ = 0;
+  }
+  jointTorque = torque_;
+  position_ = jointPositionHall;
   return 0;
 }
 
 int ArmmsFakeComm::setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
                                       float& jointSpeed, float& jointTorque)
 {
-  jointPositionHall = 200.0;
+  jointPositionHall = jointCommand;
+  torque_ = -1.2  + (2.* sin (omega_t_));
+  omega_t_ = omega_t_ + 0.01;
+  if(omega_t_ > (3.14*2))
+  {
+    omega_t_ = 0;
+  }
+  jointTorque = torque_;
+  position_ = jointPositionHall;
   return 0;
 }
 
 int ArmmsFakeComm::initializeActuator(float& jointPositionOptical)
 {
-  jointPositionOptical = 200.0;
+  jointPositionOptical = position_;
   return 0;
 }
 
@@ -63,7 +80,8 @@ int ArmmsFakeComm::stopMotorControl()
 int ArmmsFakeComm::getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
                                      float& jointTorque)
 {
-  jointPositionHall = 200.0;
+  jointTorque = torque_;
+  jointPositionHall = position_;
   return 0;
 }
 }  // namespace armms_driver
