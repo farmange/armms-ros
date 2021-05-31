@@ -74,6 +74,8 @@ void ArmmsAT1XControl::retrieveParameters_()
 {
   ros::param::get("~armms_control_rate", loop_rate_);
   ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
+  ros::param::get("~slow_velocity_duration", slow_velocity_duration_);
+  ros::param::get("~acceleration_duration", acceleration_duration_);
 }
 
 void ArmmsAT1XControl::initializeStateMachine_()
@@ -214,7 +216,7 @@ void ArmmsAT1XControl::intentControlEnter_()
 {
   refresh_joint_state_ = true;
   user_input_handler_.enableUserIntent();
-  setLedColor_(0, 0, 255, 0);  // blue 
+  setLedColor_(0, 0, 255, 0);  // blue
 }
 
 void ArmmsAT1XControl::intentControlUpdate_()
@@ -310,6 +312,43 @@ void ArmmsAT1XControl::callbackJointStates_(const sensor_msgs::JointStatePtr& ms
 }
 
 /*******************************************/
+void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
+{
+  /* Detect rising edge */
+  if (velocity_cmd != 0)
+  {
+    if (adapt_accel_rising_edge_detected == true)
+    {
+      adapt_accel_time_ = ros::Time::now();
+    }
+    adapt_accel_rising_edge_detected = false;
+  }
+  else
+  {
+    adapt_accel_rising_edge_detected = true;
+    return;
+  }
+  ros::Duration long_cmd_duration =
+      ros::Duration(ros::Time::now() - adapt_accel_time_) - ros::Duration(slow_velocity_duration_);
+  if (long_cmd_duration > ros::Duration(0.0))
+  {
+    double step = (joint_max_speed_ - abs(velocity_cmd));
+    if (long_cmd_duration < ros::Duration(acceleration_duration_))
+    {
+      /* After slow_velocity_duration_, we start to linearly increase the velocity */
+      step = step * (long_cmd_duration.toSec() / acceleration_duration_);
+    }
+    if (velocity_cmd > 0)
+    {
+      velocity_cmd = velocity_cmd + step;
+    }
+    else
+    {
+      velocity_cmd = velocity_cmd - step;
+    }
+  }
+}
+
 ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velocity_cmd)
 {
   /* If no fresh position was received since 100ms, stop publishing new commands */
@@ -332,9 +371,10 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
     ROS_INFO_NAMED("ArmmsAT1XControl", "Refresh the joint position %f = %f : ", cmd_.data, joint_position_);
     cmd_.data = joint_position_;
     refresh_joint_state_ = false;
-    return OK; // TODO should we exit here ?
+    return OK;  // TODO should we exit here ?
   }
   double velocity_cmd_limited = velocity_cmd;
+  adaptAcceleration_(velocity_cmd_limited);
   limit_handler_.adaptVelocityNearLimits(velocity_cmd_limited);
 
   ROS_DEBUG_NAMED("ArmmsAT1XControl", "velocity_cmd_limited : %f", velocity_cmd_limited);
@@ -363,6 +403,7 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
 
   return OK;
 }
+
 ArmmsAT1XControl::status_t ArmmsAT1XControl::startMotor_()
 {
   armms_msgs::SetMotorPower msgPower;
@@ -400,7 +441,8 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::userIntentCalib_()
   return OK;
 }
 
-ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(const uint8_t& r, const uint8_t& g, const uint8_t& b, const uint8_t& blink_speed)
+ArmmsAT1XControl::status_t ArmmsAT1XControl::setLedColor_(const uint8_t& r, const uint8_t& g, const uint8_t& b,
+                                                          const uint8_t& blink_speed)
 
 {
   armms_msgs::SetLedColor msgColor;

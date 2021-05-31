@@ -45,12 +45,11 @@ private:
   ros::ServiceClient shutdown_srv_;
   ros::ServiceClient reset_controller_srv_;
   ros::ServiceClient user_intent_calib_srv_;
-  
+
   ros::Publisher position_command_pub_;
   ros::Subscriber joint_state_sub_;
   bool refresh_joint_state_;
   double joint_max_speed_;
-  double reduced_speed_divisor_;
   double velocity_cmd_;
   std_msgs::Float64 cmd_;
   ros::Timer non_realtime_loop_;
@@ -58,8 +57,11 @@ private:
   double sampling_period_;
   double joint_position_;
   double joint_torque_;
+  double slow_velocity_duration_;
+  double acceleration_duration_;
   ros::Time joint_position_time_;
-
+  ros::Time adapt_accel_time_;
+  bool adapt_accel_rising_edge_detected;
   /* FSM engine */
   Engine<ArmmsAT1XControl>* engine_;
 
@@ -90,7 +92,7 @@ private:
   bool trToIntentControl_();
   bool trToIntentCalibration_();
   bool trExitIntentCalibration_();
-  
+
   bool trFinalize_();
   bool trErrorSuccess_();
   bool trErrorCritical_();
@@ -126,6 +128,7 @@ private:
 
   void callbackJointStates_(const sensor_msgs::JointStatePtr& msg);
 
+  void adaptAcceleration_(double& velocity_cmd);
   status_t velocityControl_(const double& velocity_cmd);
   status_t startMotor_();
   status_t stopMotor_();
