@@ -136,6 +136,7 @@ void ArmmsAT1XControl::initializeStateMachine_()
   tr_finalize_->registerConditionFcn(&ArmmsAT1XControl::trFinalize_);
   tr_finalize_->addInitialState(state_stopped_);
   tr_finalize_->addInitialState(state_position_control_);
+  tr_finalize_->addInitialState(state_intent_control_);
   tr_finalize_->addInitialState(state_error_processing_);
 
   tr_error_success_ = new Transition<ArmmsAT1XControl>(this, state_stopped_);
@@ -258,6 +259,7 @@ bool ArmmsAT1XControl::trInitialized_()
 bool ArmmsAT1XControl::trErrorRaised_()
 {
   /* Raise error if limit switch or error are present */
+  // TODO FIX this to improve error handling and prevent reboot
   return (user_input_handler_.getSwitchLimit() || status_ != OK);
 }
 

@@ -54,7 +54,8 @@ ArmmsDriver::ArmmsDriver()
     ROS_ERROR("Cannot initialize communication instance...");
     armms_msgs::SetInt msgShutdown;
     msgShutdown.request.value = 1;  // shutdown
-    shutdown_srv_.call(msgShutdown);
+    // TODO SHUTDOWN ISSUE
+    // shutdown_srv_.call(msgShutdown);
     ros::shutdown();
     return;
   }
@@ -140,7 +141,6 @@ void ArmmsDriver::retrieveParameters_()
   ros::param::get("~api_logging", api_logging_);
   ros::param::get("~device", device_);
   ros::param::get("~fake_communication", fake_communication_);
-
 }
 
 bool ArmmsDriver::callbackResetController_(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res)

@@ -119,7 +119,6 @@ void ArmmsHardwareInterface::write()
 
   if (comm_->setPositionCommandExt(jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque, jointPMW,
                                    jointPositionOptical, jointAccelX, jointAccelY, jointAccelZ, jointTemp) == 0)
-  // if (comm_->setPositionCommand(jointCommand, jointCurrent, jointPositionHall, jointSpeed, jointTorque) == 0)
   {
     ROS_DEBUG("Write actuator position command: %f", joint_position_command_[0]);
     // joint_position_[0] = jointPositionHall;
