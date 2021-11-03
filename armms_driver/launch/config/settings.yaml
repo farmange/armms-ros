@@ -17,6 +17,5 @@ supply_en_pin               : 12
 short_press_duration        : 0.2
 long_press_duration         : 4.0
 
-twin_button_velocity        : 8.0
 actuator_address            : 19
 close_loop_control          : false

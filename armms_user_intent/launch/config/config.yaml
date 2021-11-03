@@ -2,4 +2,7 @@ alpha_slow_ema               : 0.01
 alpha_fast_ema               : 0.1
 threshold_high               : 2.5
 threshold_low                : 1.5
-user_mean_torque             : 1.2 #-1.2 #-0.8
+### LanPi
+user_mean_torque             : 1.2 
+### Riyad
+# user_mean_torque             : -0.23

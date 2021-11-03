@@ -49,7 +49,6 @@ private:
   ros::Publisher position_command_pub_;
   ros::Subscriber joint_state_sub_;
   bool refresh_joint_state_;
-  double joint_max_speed_;
   double velocity_cmd_;
   std_msgs::Float64 cmd_;
   ros::Timer non_realtime_loop_;
@@ -58,6 +57,7 @@ private:
   double joint_position_;
   double joint_torque_;
   double slow_velocity_duration_;
+  double slow_velocity_setpoint_;
   double acceleration_duration_;
   ros::Time joint_position_time_;
   ros::Time adapt_accel_time_;

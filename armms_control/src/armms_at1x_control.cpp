@@ -73,8 +73,8 @@ void ArmmsAT1XControl::initializePublishers_()
 void ArmmsAT1XControl::retrieveParameters_()
 {
   ros::param::get("~armms_control_rate", loop_rate_);
-  ros::param::get("/joint_limits/joint1/max_velocity", joint_max_speed_);
   ros::param::get("~slow_velocity_duration", slow_velocity_duration_);
+  ros::param::get("~slow_velocity_setpoint", slow_velocity_setpoint_);
   ros::param::get("~acceleration_duration", acceleration_duration_);
 }
 
@@ -330,11 +330,19 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
     adapt_accel_rising_edge_detected = true;
     return;
   }
+
+  /* If velocity command is lower than slow_velocity define in config file,
+  then no acceleration adaptation is performed */
+  if (abs(velocity_cmd) < slow_velocity_setpoint_)
+  {
+    return;
+  }
+
   ros::Duration long_cmd_duration =
       ros::Duration(ros::Time::now() - adapt_accel_time_) - ros::Duration(slow_velocity_duration_);
   if (long_cmd_duration > ros::Duration(0.0))
   {
-    double step = (joint_max_speed_ - abs(velocity_cmd));
+    double step = (abs(velocity_cmd) - slow_velocity_setpoint_);
     if (long_cmd_duration < ros::Duration(acceleration_duration_))
     {
       /* After slow_velocity_duration_, we start to linearly increase the velocity */

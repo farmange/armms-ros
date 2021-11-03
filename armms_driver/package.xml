@@ -17,6 +17,9 @@
   <depend>controller_manager_msgs</depend>
   <depend>controller_manager</depend>
   <depend>position_controllers</depend>
+  <depend>joint_state_controller</depend>
+  <depend>joint_limits_interface</depend>
+  <depend>rosbridge_server</depend>
   <export>
   </export>
 </package>

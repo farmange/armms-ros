@@ -45,7 +45,7 @@ add_executable(${PROJECT_NAME}
 EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
 
-if (${ARCHITECTURE} MATCHES "aarch64" OR ${ARCHITECTURE} MATCHES "armv6l")
+if (${ARCHITECTURE} MATCHES "aarch64" OR ${ARCHITECTURE} MATCHES "armv7l" OR ${ARCHITECTURE} MATCHES "armv6l")
     message(STATUS "wiringPi library is required for ${ARCHITECTURE} processor")
     message(STATUS "Looking for wiringPi in ${catkin_LIBRARIES}")
     target_link_libraries(${PROJECT_NAME}
