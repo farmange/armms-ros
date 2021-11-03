@@ -17,9 +17,9 @@ ArmmsKinovaComm::ArmmsKinovaComm()
 
 int ArmmsKinovaComm::init(const std::string device, const bool& debug_log)
 {
-  if (loadLibrary_("libkinovadrv.so") != 0)
+  if (loadLibrary_("libkinova.so") != 0)
   {
-    ROS_FATAL("Failed to load library libkinovadrv.so !");
+    ROS_FATAL("Failed to load library libkinova.so !");
     return 1;
   }
 

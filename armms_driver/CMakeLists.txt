@@ -11,8 +11,6 @@ find_package(catkin REQUIRED dynamic_reconfigure COMPONENTS
   controller_manager
 )
 
-link_directories(${PROJECT_SOURCE_DIR}/lib/${CMAKE_LIBRARY_ARCHITECTURE})
-
 # export library to other packages
 catkin_package(
   INCLUDE_DIRS include
@@ -38,20 +36,11 @@ src/comm/armms_kinova_comm.cpp
 src/armms_hardware_interface.cpp
 src/armms_bag_recorder.cpp
 )
-# target_link_libraries(armms_driver ${catkin_LIBRARIES} ${Boost_LIBRARIES} armms_libkinova kinovadrv)
-target_link_libraries(armms_driver ${catkin_LIBRARIES} ${Boost_LIBRARIES} kinovadrv)
-
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} -lkinova)
 
 #############
 ## Install ##
 #############
-
-# Copy over .so binary blobs to /usr/lib
-install(FILES
-  lib/${CMAKE_LIBRARY_ARCHITECTURE}/libkinovadrv.so
-  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
-
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"

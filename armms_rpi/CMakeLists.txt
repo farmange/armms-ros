@@ -42,12 +42,12 @@ add_executable(${PROJECT_NAME}
 #
 # wiringPi should be installed only on a Raspberry Pi board
 #
-
 EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
 
-if (${ARCHITECTURE} MATCHES "aarch64")
-    message(STATUS "wiringPi library is required - arm processor")
+if (${ARCHITECTURE} MATCHES "aarch64" OR ${ARCHITECTURE} MATCHES "armv6l")
+    message(STATUS "wiringPi library is required for ${ARCHITECTURE} processor")
+    message(STATUS "Looking for wiringPi in ${catkin_LIBRARIES}")
     target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES} 
         -lwiringPi
@@ -64,17 +64,9 @@ add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
 
-# # ARMMS rpi diagnostics node
-# add_executable(${PROJECT_NAME}_diagnostics
-#   src/armms_rpi_diagnostics.cpp
-# )
-# target_link_libraries(${PROJECT_NAME}_diagnostics  ${catkin_LIBRARIES})
-# add_dependencies(${PROJECT_NAME}_diagnostics ${catkin_EXPORTED_TARGETS})
-
 #############
 ## Install ##
 #############
-
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   FILES_MATCHING PATTERN "*.h"

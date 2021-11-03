@@ -13,7 +13,7 @@
 #include <dlfcn.h>
 #include <ros/ros.h>
 #include <armms_driver/comm/armms_base_comm.h>
-#include "kinovadrv/kinovadrv.h"
+#include "kinova/kinovadrv.h"
 
 namespace armms_driver
 {
@@ -28,13 +28,13 @@ public:
   int startMotorControl();
   int stopMotorControl();
 
-  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
-                                    float& jointSpeed, float& jointTorque, float& jointPMW, float& jointPositionOptical,
-                                    short& jointAccelX, short& jointAccelY, short& jointAccelZ, short& jointTemp);
-  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall,
-                                 float& jointSpeed, float& jointTorque);
-  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed,
-                                float& jointTorque);
+  int setPositionCommandExt(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                            float& jointTorque, float& jointPMW, float& jointPositionOptical, short& jointAccelX,
+                            short& jointAccelY, short& jointAccelZ, short& jointTemp);
+  int setPositionCommand(const float& jointCommand, float& jointCurrent, float& jointPositionHall, float& jointSpeed,
+                         float& jointTorque);
+  int getActualPosition(float& jointCurrent, float& jointPositionHall, float& jointSpeed, float& jointTorque);
+
 private:
   KinovaApi::APILayer* driver_;
 
