@@ -1,17 +1,8 @@
 <launch>
-
-  <!-- <arg name="use_urdf" default="true"/> -->
-  <!-- <arg name="armms_robotType" default="at1x" /> -->
-  <!-- <arg name="armms_robotName" default="$(arg armms_robotType)"/> -->
-
-<!--
-  <group if="$(arg use_urdf)">
-      <param name="robot_description" textfile="$(find armms_description)/urdf/at1x.urdf"/> 
-  </group>
--->
   <arg name="mock_hw" default="false" />
-  <arg name="rosbag_record" default="true" />
-  <include file="$(find armms_driver)/launch/at1x_controller.launch" pass_all_args="true" />
+  <arg name="webapp" default="false" />
+  <arg name="rosbag_record" default="false" />
+  <include file="$(find armms_driver)/launch/at1x_driver.launch" pass_all_args="true" />
 
   <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
       <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 

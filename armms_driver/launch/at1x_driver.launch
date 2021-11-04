@@ -1,5 +1,5 @@
 <launch>
-    <arg name="mock_hw" default="false" />
+    <!-- <arg name="mock_hw" default="false" /> -->
     <rosparam file="$(find armms_driver)/launch/config/hardware.yaml" command="load"/>
     <rosparam file="$(find armms_driver)/launch/config/controllers.yaml" command="load"/>
     <rosparam file="$(find armms_driver)/launch/config/joint_limits.yaml" command="load"/>
@@ -15,8 +15,9 @@
             /at1x/controller/position/joint1
         "/>
 
-    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
-        <arg name="port" value="9090"/>
-    </include>
-
+    <group if="$(arg webapp)">
+        <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch">
+            <arg name="port" value="9090"/>
+        </include>
+    </group>
 </launch>
