@@ -4,6 +4,6 @@
 armms_control_rate          : 100     # Hz
 default_velocity            : 30.0 # deg/s
 slow_velocity_setpoint      : 10.0 # s
-slow_velocity_duration      : 0.5 # s
+slow_velocity_duration      : 1.0 # s
 acceleration_duration       : 1.5 # s
 intent_ctrl_disable_limit   : 140 # deg

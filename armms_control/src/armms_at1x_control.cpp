@@ -347,8 +347,9 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
     return;
   }
 
-  ros::Duration long_cmd_duration =
-      ros::Duration(ros::Time::now() - adapt_accel_time_) - ros::Duration(slow_velocity_duration_);
+  ros::Duration started_since_duration = ros::Duration(ros::Time::now() - adapt_accel_time_);
+  ros::Duration long_cmd_duration = ros::Duration(slow_velocity_duration_) - started_since_duration;
+
   if (long_cmd_duration > ros::Duration(0.0))
   {
     double step = (abs(velocity_cmd) - slow_velocity_setpoint_);

@@ -8,9 +8,9 @@ user_btn_up_pin             : 24
 user_btn_down_pin           : 25
 power_button_pin            : 23
 switch_limit_pin            : 7
-red_led_pin                 : 0
-green_led_pin               : 2
-blue_led_pin                : 3
+red_led_pin                 : 0 # GPIO17
+green_led_pin               : 2 # GPIO27
+blue_led_pin                : 3 # GPIO22
 motor_power_pin             : 12
 
 # duration of a long press on power button
