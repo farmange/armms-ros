@@ -349,15 +349,18 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
 
   ros::Duration started_since_duration = ros::Duration(ros::Time::now() - adapt_accel_time_);
   ros::Duration long_cmd_duration = ros::Duration(slow_velocity_duration_) - started_since_duration;
+  ROS_WARN("(1) long_cmd_duration:%f", long_cmd_duration);
 
   if (long_cmd_duration > ros::Duration(0.0))
   {
     double step = (abs(velocity_cmd) - slow_velocity_setpoint_);
+    ROS_WARN("(2) step:%f", step);
     if (long_cmd_duration < ros::Duration(acceleration_duration_))
     {
       /* After slow_velocity_duration_, we start to linearly increase the velocity */
       step = step * (long_cmd_duration.toSec() / acceleration_duration_);
     }
+    ROS_WARN("(34) velocity_cmd:%f", velocity_cmd);
     if (velocity_cmd > 0)
     {
       velocity_cmd = velocity_cmd + step;
@@ -366,6 +369,7 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
     {
       velocity_cmd = velocity_cmd - step;
     }
+    ROS_WARN("(4) velocity_cmd:%f", velocity_cmd);
   }
 }
 
