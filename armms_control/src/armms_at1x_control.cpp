@@ -76,6 +76,7 @@ void ArmmsAT1XControl::retrieveParameters_()
   ros::param::get("~slow_velocity_duration", slow_velocity_duration_);
   ros::param::get("~slow_velocity_setpoint", slow_velocity_setpoint_);
   ros::param::get("~acceleration_duration", acceleration_duration_);
+  ros::param::get("~intent_ctrl_disable_limit", intent_ctrl_disable_limit_);
 }
 
 void ArmmsAT1XControl::initializeStateMachine_()
@@ -222,6 +223,14 @@ void ArmmsAT1XControl::intentControlEnter_()
 
 void ArmmsAT1XControl::intentControlUpdate_()
 {
+  if (joint_position_ < intent_ctrl_disable_limit_)
+  {
+    user_input_handler_.disableUserIntent();
+  }
+  else
+  {
+    user_input_handler_.enableUserIntent();
+  }
   double input_velocity_cmd = user_input_handler_.getVelocityCommand();
   velocityControl_(input_velocity_cmd);
 }
