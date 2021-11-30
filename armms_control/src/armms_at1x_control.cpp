@@ -383,6 +383,7 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velocity_cmd)
 {
+  double velocity_cmd_limited = 0.0;
   /* If no fresh position was received since 100ms, stop publishing new commands */
   ros::Duration position_dt = ros::Duration(ros::Time::now() - joint_position_time_);
   if (position_dt > ros::Duration(0.1))
@@ -405,15 +406,19 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
     refresh_joint_state_ = false;
     return OK;  // TODO should we exit here ?
   }
-  double velocity_cmd_limited = velocity_cmd;
+  velocity_cmd_limited = velocity_cmd;
   adaptAcceleration_(velocity_cmd_limited);
   limit_handler_.adaptVelocityNearLimits(velocity_cmd_limited);
 
   ROS_DEBUG_NAMED("ArmmsAT1XControl", "velocity_cmd_limited : %f", velocity_cmd_limited);
 
-  /* Speed integration to retrieve position command */
-  cmd_.data = cmd_.data + (velocity_cmd_limited * sampling_period_);
-  ROS_DEBUG_NAMED("ArmmsAT1XControl", "Computed position command is : %f", cmd_.data);
+  /* If positionning error is below 10 degres, do integration */
+  if (abs(cmd_.data - joint_position_) < 10.0)
+  {
+    /* Speed integration to retrieve position command */
+    cmd_.data = cmd_.data + (velocity_cmd_limited * sampling_period_);
+    ROS_DEBUG_NAMED("ArmmsAT1XControl", "Computed position command is : %f", cmd_.data);
+  }
 
   limit_handler_.saturatePosition(cmd_.data);
   limit_handler_.publishLimits();
@@ -424,6 +429,7 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
     if (velocity_cmd_ != 0.0)
     {
       std_srvs::Empty dummy;
+      cmd_.data = joint_position_;
       reset_controller_srv_.call(dummy);
     }
   }
