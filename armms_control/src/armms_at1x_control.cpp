@@ -348,44 +348,37 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
   {
     return;
   }
-
+  double step = 0.0;
   ros::Duration started_since_duration = ros::Duration(ros::Time::now() - adapt_accel_time_);
   ros::Duration long_cmd_duration = started_since_duration - ros::Duration(slow_velocity_duration_);
-  ROS_WARN("---\n(1) long_cmd_duration:%f", long_cmd_duration.toSec());
 
   /* If long command detected */
   if (long_cmd_duration > ros::Duration(0.0))
   {
-    double step = (abs(velocity_cmd) - slow_velocity_setpoint_);
-    ROS_WARN("(2) step:%f", step);
-
     /* while rampup duration is not exceed */
     if (long_cmd_duration < ros::Duration(acceleration_duration_))
     {
+      /* Compute the step to achieve to go from slow velocity to desired velocity */
+      step = (abs(velocity_cmd) - slow_velocity_setpoint_);
       /* After slow_velocity_duration_, we start to linearly increase the velocity */
       step = step * (long_cmd_duration.toSec() / acceleration_duration_);
-      ROS_WARN("(3) step updated :%f", step);
-
-      /* Update velocity setpoint according to the computed step and the velocity direction */
-      if (velocity_cmd > 0)
-      {
-        velocity_cmd = slow_velocity_setpoint_ + step;
-      }
-      else
-      {
-        velocity_cmd = -slow_velocity_setpoint_ - step;
-      }
     }
     else
     {
       /* Do nothing (keep velocity_cmd as it is) */
+      return;
     }
+  }
+
+  /* Update velocity setpoint according to the computed step and the velocity direction */
+  if (velocity_cmd > 0)
+  {
+    velocity_cmd = slow_velocity_setpoint_ + step;
   }
   else
   {
-    velocity_cmd = slow_velocity_setpoint_;
+    velocity_cmd = -slow_velocity_setpoint_ - step;
   }
-  ROS_WARN("(4) velocity_cmd:%f", velocity_cmd);
 }
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velocity_cmd)

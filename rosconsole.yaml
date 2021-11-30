@@ -1,4 +1,4 @@
-log4j.logger.ros=DEBUG
+log4j.logger.ros=INFO
 
 #log4j.logger.ros.armms_driver=DEBUG
 #log4j.logger.ros.armms_control=DEBUG
