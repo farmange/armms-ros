@@ -412,8 +412,8 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
 
   ROS_DEBUG_NAMED("ArmmsAT1XControl", "velocity_cmd_limited : %f", velocity_cmd_limited);
 
-  /* If positionning error is below 10 degres, do integration */
-  if (abs(cmd_.data - joint_position_) < abs(velocity_cmd_limited * sampling_period_))
+  /* If positionning error is below 5.0 degres, do integration */
+  if (abs(cmd_.data - joint_position_) < 5.0)
   {
     /* Speed integration to retrieve position command */
     cmd_.data = cmd_.data + (velocity_cmd_limited * sampling_period_);
@@ -423,7 +423,7 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
   limit_handler_.saturatePosition(cmd_.data);
   limit_handler_.publishLimits();
 
-  /* This detect falling edge of user command and force controller to reset */
+  /* This detect falling edge of user command and force controller to reset and stop enforcelimit for example */
   if (velocity_cmd_limited == 0)
   {
     if (velocity_cmd_ != 0.0)
