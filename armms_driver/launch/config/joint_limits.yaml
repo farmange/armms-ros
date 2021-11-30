@@ -19,9 +19,9 @@ joint_limits:
     # soft_min_position: 160.0
     # soft_max_position: 230.0
     ####### LarTi #######
-    min_position: 185.0
+    min_position: 184.0
     max_position: 265.0
-    soft_min_position: 190.0
+    soft_min_position: 185.0
     soft_max_position: 260.0
     ####### Riyad #######
     # min_position: 159.0
