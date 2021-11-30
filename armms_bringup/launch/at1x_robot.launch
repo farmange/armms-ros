@@ -4,9 +4,11 @@
   <arg name="rosbag_record" default="false" />
   <include file="$(find armms_driver)/launch/at1x_driver.launch" pass_all_args="true" />
 
-  <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
-      <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
-  </node>
+  <group unless="$(arg mock_hw)">
+    <node name="armms_rpi_node" pkg="armms_rpi" type="armms_rpi" output="screen">
+        <rosparam file="$(find armms_rpi)/launch/config/rpi_settings.yaml" /> 
+    </node>
+  </group>
 
   <node name="armms_intent_node" pkg="armms_user_intent" type="armms_user_intent.py" output="screen">
       <rosparam file="$(find armms_user_intent)/launch/config/config.yaml" /> 

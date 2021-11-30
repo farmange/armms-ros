@@ -76,7 +76,7 @@ void ArmmsAT1XControl::retrieveParameters_()
   ros::param::get("~slow_velocity_duration", slow_velocity_duration_);
   ros::param::get("~slow_velocity_setpoint", slow_velocity_setpoint_);
   ros::param::get("~acceleration_duration", acceleration_duration_);
-  ros::param::get("~intent_ctrl_disable_limit", intent_ctrl_disable_limit_);
+  ros::param::get("~intent_ctrl_lo_limit", intent_ctrl_lo_limit_);
 }
 
 void ArmmsAT1XControl::initializeStateMachine_()
@@ -223,15 +223,17 @@ void ArmmsAT1XControl::intentControlEnter_()
 
 void ArmmsAT1XControl::intentControlUpdate_()
 {
-  if (joint_position_ < intent_ctrl_disable_limit_)
+  bool isIntentCommand = false;
+  double input_velocity_cmd = user_input_handler_.getVelocityCommand(isIntentCommand);
+  /* PATCH : disable intent command when up command receive below the intent_ctrl_lo_limit.
+   * This is to prevent intent control to go up when the arm of the user touch the armrest.
+   * Note : the intent_ctrl_lo_limit parameter have to be correctly set according to user needs
+   */
+  if (isIntentCommand && (joint_position_ < intent_ctrl_lo_limit_) && (input_velocity_cmd > 0.0))
   {
-    user_input_handler_.disableUserIntent();
+    /* Do nothing and don't execute command */
+    return;
   }
-  else
-  {
-    user_input_handler_.enableUserIntent();
-  }
-  double input_velocity_cmd = user_input_handler_.getVelocityCommand();
   velocityControl_(input_velocity_cmd);
 }
 
@@ -348,29 +350,42 @@ void ArmmsAT1XControl::adaptAcceleration_(double& velocity_cmd)
   }
 
   ros::Duration started_since_duration = ros::Duration(ros::Time::now() - adapt_accel_time_);
-  ros::Duration long_cmd_duration = ros::Duration(slow_velocity_duration_) - started_since_duration;
-  ROS_WARN("(1) long_cmd_duration:%f", long_cmd_duration);
+  ros::Duration long_cmd_duration = started_since_duration - ros::Duration(slow_velocity_duration_);
+  ROS_WARN("---\n(1) long_cmd_duration:%f", long_cmd_duration.toSec());
 
+  /* If long command detected */
   if (long_cmd_duration > ros::Duration(0.0))
   {
     double step = (abs(velocity_cmd) - slow_velocity_setpoint_);
     ROS_WARN("(2) step:%f", step);
+
+    /* while rampup duration is not exceed */
     if (long_cmd_duration < ros::Duration(acceleration_duration_))
     {
       /* After slow_velocity_duration_, we start to linearly increase the velocity */
       step = step * (long_cmd_duration.toSec() / acceleration_duration_);
-    }
-    ROS_WARN("(34) velocity_cmd:%f", velocity_cmd);
-    if (velocity_cmd > 0)
-    {
-      velocity_cmd = velocity_cmd + step;
+      ROS_WARN("(3) step updated :%f", step);
+
+      /* Update velocity setpoint according to the computed step and the velocity direction */
+      if (velocity_cmd > 0)
+      {
+        velocity_cmd = slow_velocity_setpoint_ + step;
+      }
+      else
+      {
+        velocity_cmd = -slow_velocity_setpoint_ - step;
+      }
     }
     else
     {
-      velocity_cmd = velocity_cmd - step;
+      /* Do nothing (keep velocity_cmd as it is) */
     }
-    ROS_WARN("(4) velocity_cmd:%f", velocity_cmd);
   }
+  else
+  {
+    velocity_cmd = slow_velocity_setpoint_;
+  }
+  ROS_WARN("(4) velocity_cmd:%f", velocity_cmd);
 }
 
 ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velocity_cmd)

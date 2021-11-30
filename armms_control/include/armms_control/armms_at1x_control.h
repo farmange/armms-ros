@@ -59,7 +59,7 @@ private:
   double slow_velocity_duration_;
   double slow_velocity_setpoint_;
   double acceleration_duration_;
-  double intent_ctrl_disable_limit_;
+  double intent_ctrl_lo_limit_;
   ros::Time joint_position_time_;
   ros::Time adapt_accel_time_;
   bool adapt_accel_rising_edge_detected;

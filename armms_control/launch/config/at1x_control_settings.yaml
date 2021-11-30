@@ -6,4 +6,8 @@ default_velocity            : 30.0 # deg/s
 slow_velocity_setpoint      : 10.0 # s
 slow_velocity_duration      : 1.0 # s
 acceleration_duration       : 1.5 # s
-intent_ctrl_disable_limit   : 140 # deg
+
+# PATCH : disable intent command when up command receive below the intent_ctrl_lo_limit.
+#  This is to prevent intent control to go up when the arm of the user touch the armrest.
+#  Note : the intent_ctrl_lo_limit parameter have to be correctly set according to user needs
+intent_ctrl_lo_limit        : 170 # deg

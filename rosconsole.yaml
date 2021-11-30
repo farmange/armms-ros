@@ -1,0 +1,9 @@
+log4j.logger.ros=DEBUG
+
+#log4j.logger.ros.armms_driver=DEBUG
+#log4j.logger.ros.armms_control=DEBUG
+#log4j.logger.ros.armms_rpi=DEBUG
+
+log4j.logger.ros.armms_control.FsmEngine=INFO
+log4j.logger.ros.armms_control.FsmState=INFO
+log4j.logger.ros.armms_control.FsmTransition=INFO

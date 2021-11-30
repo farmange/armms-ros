@@ -22,7 +22,7 @@ ArmmsDriver::ArmmsDriver()
     return;
   }
 
-  ros::Duration max_waiting_time = ros::Duration(4.0);
+  ros::Duration max_waiting_time = ros::Duration(5.0);
   ros::Duration elapsed_time = ros::Duration(0.0);
   ros::Time init_time = ros::Time::now();
   while (!shutdown_srv_.exists() && elapsed_time < max_waiting_time)

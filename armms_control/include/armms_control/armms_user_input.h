@@ -30,13 +30,14 @@ public:
   ArmmsUserInput();
   FsmInputEvent getUserInput();
   double getVelocityCommand();
+  double getVelocityCommand(bool& is_intent_command);
   bool resetJointStateRequest();
   bool getSwitchLimit();
   void processUserInput();
   void clearUserInput();
   void enableUserIntent();
   void disableUserIntent();
-  
+
 private:
   ros::NodeHandle nh_;
   ros::ServiceServer pwr_btn_ev_service_;
@@ -53,6 +54,7 @@ private:
   double speed_setpoint_;
   double velocity_command_;
 
+  bool is_intent_command_;
   bool user_btn_down_;
   bool user_btn_up_;
   bool webgui_btn_down_;

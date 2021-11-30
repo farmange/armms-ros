@@ -40,7 +40,8 @@ void ArmmsUserInput::initializeSubscribers_()
 
   rpi_interface_sub_ = nh_.subscribe("/armms_rpi/rpi_interface", 1, &ArmmsUserInput::callbackRpiInterface_, this);
   web_interface_sub_ = nh_.subscribe("/armms_web/web_interface", 1, &ArmmsUserInput::callbackWebInterface_, this);
-  intent_interface_sub_ = nh_.subscribe("/armms_user_intent/intent_interface", 1, &ArmmsUserInput::callbackIntentInterface_, this);
+  intent_interface_sub_ =
+      nh_.subscribe("/armms_user_intent/intent_interface", 1, &ArmmsUserInput::callbackIntentInterface_, this);
 }
 
 void ArmmsUserInput::initializePublishers_()
@@ -89,7 +90,6 @@ void ArmmsUserInput::callbackWebInterface_(const armms_msgs::WebInterfacePtr& ms
   }
   webgui_btn_up_ = msg->user_button_up;
 }
-
 
 void ArmmsUserInput::callbackIntentInterface_(const armms_msgs::IntentInterfacePtr& msg)
 {
@@ -188,6 +188,13 @@ FsmInputEvent ArmmsUserInput::getUserInput()
 
 double ArmmsUserInput::getVelocityCommand()
 {
+  bool dummy;
+  return getVelocityCommand(dummy);
+}
+
+double ArmmsUserInput::getVelocityCommand(bool& is_intent_command)
+{
+  is_intent_command = is_intent_command_;
   return velocity_command_;
 }
 
@@ -203,6 +210,7 @@ bool ArmmsUserInput::resetJointStateRequest()
 
 void ArmmsUserInput::processUserInput()
 {
+  is_intent_command_ = false;
   if (user_btn_up_ && user_btn_down_)
   {
     /* do nothing */
@@ -245,13 +253,16 @@ void ArmmsUserInput::processUserInput()
     }
     else if (intent_btn_up_)
     {
+      is_intent_command_ = true;
       velocity_command_ = +joint_setpoint_velocity_;
       ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from user intent up button : %f", velocity_command_);
     }
     else if (intent_btn_down_)
     {
+      is_intent_command_ = true;
       velocity_command_ = -joint_setpoint_velocity_;
-      ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from user intent down button : %f", velocity_command_);
+      ROS_DEBUG_NAMED("ArmmsUserInput", "velocity command received from user intent down button : %f",
+                      velocity_command_);
     }
     else
     {
@@ -277,7 +288,6 @@ void ArmmsUserInput::clearUserInput()
   input_event_requested_ = FsmInputEvent::None;
 }
 
-
 void ArmmsUserInput::enableUserIntent()
 {
   user_intent_enabled_ = true;
@@ -287,6 +297,5 @@ void ArmmsUserInput::disableUserIntent()
 {
   user_intent_enabled_ = false;
 }
-
 
 }  // namespace armms_control
