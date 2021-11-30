@@ -413,7 +413,7 @@ ArmmsAT1XControl::status_t ArmmsAT1XControl::velocityControl_(const double& velo
   ROS_DEBUG_NAMED("ArmmsAT1XControl", "velocity_cmd_limited : %f", velocity_cmd_limited);
 
   /* If positionning error is below 10 degres, do integration */
-  if (abs(cmd_.data - joint_position_) < (velocity_cmd_limited * sampling_period_))
+  if (abs(cmd_.data - joint_position_) < abs(velocity_cmd_limited * sampling_period_))
   {
     /* Speed integration to retrieve position command */
     cmd_.data = cmd_.data + (velocity_cmd_limited * sampling_period_);
