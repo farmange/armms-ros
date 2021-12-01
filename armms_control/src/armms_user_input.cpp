@@ -57,15 +57,15 @@ void ArmmsUserInput::retrieveParameters_()
 
 void ArmmsUserInput::callbackRpiInterface_(const armms_msgs::RpiInterfacePtr& msg)
 {
-  /* Detect rising edge of the down button to reset local joint position */
-  if (!user_btn_down_ && msg->user_button_down)
+  /* Detect falling and rising edge of the down button to reset local joint position */
+  if ((!user_btn_down_ && msg->user_button_down) || (user_btn_down_ && !msg->user_button_down))
   {
     refresh_joint_state_ = true;
   }
   user_btn_down_ = msg->user_button_down;
 
-  /* Detect rising edge of the up button to reset local joint position */
-  if (!user_btn_up_ && msg->user_button_up)
+  /* Detect falling and rising edge of the up button to reset local joint position */
+  if ((!user_btn_up_ && msg->user_button_up) || (user_btn_up_ && !msg->user_button_up))
   {
     refresh_joint_state_ = true;
   }
@@ -77,14 +77,14 @@ void ArmmsUserInput::callbackRpiInterface_(const armms_msgs::RpiInterfacePtr& ms
 void ArmmsUserInput::callbackWebInterface_(const armms_msgs::WebInterfacePtr& msg)
 {
   /* Detect rising edge of the down button to reset local joint position */
-  if (!webgui_btn_down_ && msg->user_button_down)
+  if ((!webgui_btn_down_ && msg->user_button_down) || (webgui_btn_down_ && !msg->user_button_down))
   {
     refresh_joint_state_ = true;
   }
   webgui_btn_down_ = msg->user_button_down;
 
   /* Detect rising edge of the up button to reset local joint position */
-  if (!webgui_btn_up_ && msg->user_button_up)
+  if ((!webgui_btn_up_ && msg->user_button_up) || (webgui_btn_up_ && !msg->user_button_up))
   {
     refresh_joint_state_ = true;
   }
@@ -94,14 +94,14 @@ void ArmmsUserInput::callbackWebInterface_(const armms_msgs::WebInterfacePtr& ms
 void ArmmsUserInput::callbackIntentInterface_(const armms_msgs::IntentInterfacePtr& msg)
 {
   /* Detect rising edge of the down button to reset local joint position */
-  if (!intent_btn_down_ && msg->user_button_down)
+  if ((!intent_btn_down_ && msg->user_button_down) || (intent_btn_down_ && !msg->user_button_down))
   {
     refresh_joint_state_ = true;
   }
   intent_btn_down_ = msg->user_button_down;
 
   /* Detect rising edge of the up button to reset local joint position */
-  if (!intent_btn_up_ && msg->user_button_up)
+  if ((!intent_btn_up_ && msg->user_button_up) || (intent_btn_up_ && !msg->user_button_up))
   {
     refresh_joint_state_ = true;
   }
